@@ -1,13 +1,14 @@
-# Semantic Core (Stages 2–4)
+# Semantic Core (Stages 2–5)
 
 Authority: workspace-root `Buildup-Situational-Crosshair-Development-Stages.md`,
-global principles and Stages 2–4. This document describes the implemented contract.
+global principles and Stages 2–5. This document describes the implemented contract.
 
 ## Pipeline
 
 Client composition root → visibility preflight / ContextCapture → immutable
 CrosshairContextSnapshot → CandidateProvider / per-cycle CandidateCollector →
-CrosshairResolver → CrosshairSemanticState → ClassicPresentation → HUD renderer.
+CrosshairResolver → CrosshairSemanticState → PresentationResolver (Classic/Classic+)
+→ CrosshairPresentation → TransitionController → HUD renderer.
 
 PRIMARY is the left-click action channel; SECONDARY is the right-click/use channel.
 They are resolved independently, never as first/second place in a shared ranking.
@@ -94,8 +95,11 @@ execute JSON parsing on the HUD path.
 
 Presentation is pure Java with no textures, world reads or render calls. Renderer
 receives a presentation supplier and owns texture selection; it does not read
-Minecraft target/player state. Textures, blend pipeline and HUD suppression Mixin
-are unchanged. The additional placement accessor performs no rendering.
+Minecraft target/player state. Stage 5 adds PresentationResolver and
+CrosshairPresentation followed by TransitionController; the renderer now consumes
+these presentation values. ClassicPresentation still defines the exact Classic
+policy, while Classic+ adds original pixel details. The original PNGs and HUD
+suppression Mixin are unchanged. See [Classic+](classic-plus.md).
 
 ## Tests
 

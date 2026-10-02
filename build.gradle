@@ -46,10 +46,17 @@ tasks.register('ruleTest', JavaExec) {
     mainClass = 'dev.buildup.situationalcrosshair.rules.RuleEngineTest'
 }
 check.dependsOn ruleTest
+tasks.register('presentationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.buildup.situationalcrosshair.presentation.PresentationTest'
+}
+check.dependsOn presentationTest
 tasks.named('test') {
     // This executable contract suite is run by semanticTest, not a JUnit runner.
     exclude '**/SemanticCoreTest.class'
     exclude '**/RuleEngineTest.class'
+    exclude '**/PresentationTest.class'
 }
 
 fabricApi {

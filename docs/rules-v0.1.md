@@ -122,7 +122,8 @@ No scripting, regex selectors, NBT/component query language, class-name matching
 server synchronization, texture fields, GUI or debug overlay exists in v0.1.
 Rules only change semantics. Classic keeps its four existing graphics (including
 its historical charged-crossbow visual exception); secondary rules do not add
-new visible modifiers. Classic+ presentation belongs to Stage 5.
+new visible modifiers. Classic+ presentation is a separate layer; see
+[Classic+ guide](classic-plus.md).
 
 Run `./gradlew ruleTest` for parser/matcher/resolver/index contracts and
 `./gradlew runClientGameTest` for real pack reload tests.

@@ -22,6 +22,12 @@ import org.slf4j.LoggerFactory;
 public final class ClassicParityTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
+        context.runOnClient(c -> {
+            dev.buildup.situationalcrosshair.presentation.PresentationOptions.theme(
+                    dev.buildup.situationalcrosshair.presentation.CrosshairTheme.CLASSIC);
+            dev.buildup.situationalcrosshair.presentation.PresentationOptions.animation(
+                    dev.buildup.situationalcrosshair.presentation.TransitionMode.OFF);
+        });
         try (var world = context.worldBuilder().create()) {
             world.getConnection().waitForChunksDownload();
             context.waitFor(client -> client.gui.screen() == null);
