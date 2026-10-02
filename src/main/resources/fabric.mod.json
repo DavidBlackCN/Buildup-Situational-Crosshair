@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "buildup_situational_crosshair",
+  "version": "${version}",
+  "name": "Buildup Situational Crosshair",
+  "description": "Classic situational crosshairs for Minecraft 26.3.",
+  "authors": ["Buildup", "Kiley (KiOrlando) — original Classic design"],
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.3",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}
