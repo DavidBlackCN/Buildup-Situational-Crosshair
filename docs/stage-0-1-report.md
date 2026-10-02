@@ -35,8 +35,74 @@ Development offline credentials produce user-properties HTTP 401 and Realms
 authentication errors; main menu still works. Empty source-set output directories
 produce a Loader classpath warning; no missing mod classes or mixin failures.
 
-## Stage 1 — pending
+## Stage 1 — PASS (automated acceptance; manual checklist remains)
 
-Stage 0 passed before implementation starts. Actual dependency inspection confirms
-HudElementRegistry, Hud, GuiGraphicsExtractor and RenderPipelines.CROSSHAIR.
-Implementation and validation results will be recorded here after migration.
+Stage 0 passed before implementation started. ClassicCrosshairResolver reads current
+vanilla hitResult and harvest/tool state; ClassicCrosshairType contains only four
+presentation choices. CrosshairHudRenderer owns texture selection and drawing.
+No Stage 2 framework, rule engine, config GUI, third-party framework or mod-specific
+compatibility code has been introduced.
+
+HudElementRegistry.replaceElement(CROSSHAIR) wraps the original HUD element.
+The original element always executes. A small MixinExtras WrapWithCondition on
+Hud.extractCrosshair's blitSprite checks the exact `minecraft:hud/crosshair`
+identifier, records that vanilla requested the central sprite, and suppresses only
+that sprite when a Classic result exists. The HUD wrapper then draws one 15×15
+Classic texture through GuiGraphicsExtractor and RenderPipelines.CROSSHAIR.
+Finally clears frame-local state even if extraction throws.
+
+There is no ordinal, Redirect, raycast or world detection inside the mixin.
+The mixin is necessary because HUD API replacement acts on the entire layer,
+including attack indicators and internal visibility checks. Keeping the original
+element retains these checks and indicators. If no target is available, vanilla
+is untouched. Another mod replacing the same HUD element can still affect the
+result; broad HUD-mod interoperability is not claimed.
+
+## Validation
+
+- `clean build`: passed before and after migration; final jar in build/libs.
+- `runClient`: Minecraft 26.3 + Loader 0.19.5 + API loaded; Classic Theme entrypoint
+  logged; no critical mixin failures or missing Classic textures.
+- `runClientGameTest`: passed in a real integrated-server world, 16 resolver cases:
+  air, entity, empty-hand dirt, empty-hand ore, insufficient tier, correct tier,
+  wrong tool, survival bedrock, creative bedrock, bow, using bow, uncharged crossbow,
+  charged crossbow, offhand bow precedence, offhand charged crossbow, null target.
+- Every resolver case also invokes the transformed HUD and verifies one custom
+  submission and zero vanilla central sprites (or vanilla-only for null fallback),
+  resource presence, and 15×15 dimensions.
+- Seven additional HUD cases: first person, F1, third person, spectator air,
+  debug 3D crosshair, spyglass, null fallback. All passed.
+- Four PNG hashes match the reference exactly. Test mod lives in src/gametest and
+  is not part of the distributable jar.
+- Game-test screenshot `validation/classic-gameplay-smoke.png` was inspected:
+  the Classic BLOCK outline is visible in a loaded world with no second crosshair.
+  This is a smoke screenshot, not pixel-perfect proof of all four target scenes.
+- Main menu was visually observed during Stage 0. User stopped Computer Use with
+  Escape during Stage 1; no further desktop automation was performed.
+
+Evidence: `validation/stage-0-client.log`, `validation/stage-1-client.log`,
+`validation/stage-1-gametest.log`. Run game tests separately from `build`:
+`./gradlew runClientGameTest`. Gradle's standard `test` task has no unit tests;
+the actual tests require the client game-test runtime.
+
+## Manual checklist (not claimed as completed)
+
+- [ ] Visually compare DOT/BLOCK/ATTACK/ERROR in natural aiming scenarios at several GUI scales.
+- [ ] Spectator chest/entity interaction targets and non-interactable targets.
+- [ ] Attack cooldown indicator visibility in combat, including full-ready state.
+- [ ] Inventory, chat, pause, death/respawn and dimension changes.
+- [ ] In-game bow/crossbow use and dual-hand swapping over multiple ticks.
+- [ ] Coexistence with other HUD/crosshair mods (outside Stage 1 acceptance).
+
+## Known limitations and Stage 2 prerequisites
+
+- License evidence conflicts (CC BY-NC-SA LICENSE versus metadata/README restrictions).
+  Attribution and original license retained; no publication performed or additional
+  rights asserted. Resolve distribution provenance before public release.
+- Development offline login creates Realms/user-properties authentication errors;
+  it does not prevent local gameplay. Empty source-set classpath warnings remain.
+- The narrow version-specific mixin must be rechecked on Minecraft updates;
+  it uses the current MixinExtras v2 WrapWithCondition annotation.
+- Manual checks above remain; there is no claim of comprehensive compatibility.
+- Stage 2 can introduce Semantic Core behind the resolver boundary. ERROR remains
+  Classic presentation, not a permanent world-state contract. Stage 2 is not started.

@@ -33,6 +33,16 @@ java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
 }
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'buildup_situational_crosshair_test'
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}
 jar {
     def artifactName = project.name
     from('LICENSE') { rename { "${it}_${artifactName}" } }

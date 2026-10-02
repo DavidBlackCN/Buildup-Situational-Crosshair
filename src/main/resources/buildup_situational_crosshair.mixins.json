@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "dev.buildup.situationalcrosshair.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": ["HudCrosshairMixin"],
+  "injectors": {"defaultRequire": 1}
+}

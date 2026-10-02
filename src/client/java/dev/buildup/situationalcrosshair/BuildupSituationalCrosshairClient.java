@@ -1,6 +1,7 @@
 package dev.buildup.situationalcrosshair;
 
 import net.fabricmc.api.ClientModInitializer;
+import dev.buildup.situationalcrosshair.hud.CrosshairHudRenderer;
 import org.slf4j.LoggerFactory;
 
 public final class BuildupSituationalCrosshairClient implements ClientModInitializer {
@@ -8,6 +9,7 @@ public final class BuildupSituationalCrosshairClient implements ClientModInitial
 
     @Override
     public void onInitializeClient() {
-        LoggerFactory.getLogger(MOD_ID).info("Buildup Situational Crosshair loaded (Stage 0)");
+        CrosshairHudRenderer.register();
+        LoggerFactory.getLogger(MOD_ID).info("Buildup Situational Crosshair loaded (Classic Theme)");
     }
 }

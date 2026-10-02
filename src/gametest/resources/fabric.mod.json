@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "buildup_situational_crosshair_test",
+  "version": "1.0.0",
+  "name": "Classic Parity Tests",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["dev.buildup.situationalcrosshair.ClassicParityTest"]
+  }
+}

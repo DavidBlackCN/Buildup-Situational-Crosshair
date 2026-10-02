@@ -16,7 +16,9 @@ License evidence is conflicting and must be retained:
 The original LICENSE is retained verbatim. No additional rights are claimed and
 no publication or upload is performed by this local bootstrap. Resolve the
 conflicting distribution statements with the rights holder before publication.
-Stage 0 contains no copied Classic artwork or Java implementation yet.
+Stage 1 copies the four Classic crosshair PNGs byte-for-byte to the new namespace.
+Its resolver reimplements the local behavior using 26.3 APIs, and its renderer is
+new HUD API integration. No pixel, size or color changes were made to the PNGs.
 
 The Gradle wrapper is from FabricMC/fabric-example-mod's 26.3 branch;
 its Apache-2.0 notices are preserved in the wrapper scripts.
