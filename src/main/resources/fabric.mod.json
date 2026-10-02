@@ -6,6 +6,7 @@
   "description": "Classic situational crosshairs for Minecraft 26.3.",
   "authors": ["Buildup", "Kiley (KiOrlando) — original Classic design"],
   "environment": "client",
+  "license": ["MIT", "CC-BY-NC-SA-4.0"],
   "mixins": ["buildup_situational_crosshair.mixins.json"],
   "entrypoints": {
     "client": ["dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient"]

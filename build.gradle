@@ -58,4 +58,5 @@ jar {
     def artifactName = project.name
     from('LICENSE') { rename { "${it}_${artifactName}" } }
     from('THIRD_PARTY_NOTICES.md')
+    from('licenses') { into 'licenses' }
 }

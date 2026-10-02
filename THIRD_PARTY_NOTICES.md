@@ -13,7 +13,10 @@ License evidence is conflicting and must be retained:
 - Original README: "You do NOT have permission to upload this mod or any of my mods to any place without my permission."
 - Original README permits inclusion in modpacks and asks to be informed.
 
-The original LICENSE is retained verbatim. No additional rights are claimed and
+Independently authored Buildup code is now offered under MIT (root LICENSE).
+This does not relicense the artwork or any adaptations of third-party work.
+The original LICENSE is retained verbatim in `licenses/CC-BY-NC-SA-4.0.txt`.
+No additional rights are claimed and
 no publication or upload is performed by this local bootstrap. Resolve the
 conflicting distribution statements with the rights holder before publication.
 Stage 1 copies the four Classic crosshair PNGs byte-for-byte to the new namespace.
