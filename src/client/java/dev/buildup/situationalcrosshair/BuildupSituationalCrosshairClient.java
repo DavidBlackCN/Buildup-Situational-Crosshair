@@ -2,6 +2,8 @@ package dev.buildup.situationalcrosshair;
 
 import net.fabricmc.api.ClientModInitializer;
 import dev.buildup.situationalcrosshair.hud.CrosshairHudRenderer;
+import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairResolver;
+import net.minecraft.client.Minecraft;
 import org.slf4j.LoggerFactory;
 
 public final class BuildupSituationalCrosshairClient implements ClientModInitializer {
@@ -9,7 +11,7 @@ public final class BuildupSituationalCrosshairClient implements ClientModInitial
 
     @Override
     public void onInitializeClient() {
-        CrosshairHudRenderer.register();
-        LoggerFactory.getLogger(MOD_ID).info("Buildup Situational Crosshair loaded (Classic Theme)");
+        CrosshairHudRenderer.register(() -> ClassicCrosshairResolver.resolve(Minecraft.getInstance()));
+        LoggerFactory.getLogger(MOD_ID).info("Buildup Situational Crosshair loaded (Semantic Core / Classic Theme)");
     }
 }

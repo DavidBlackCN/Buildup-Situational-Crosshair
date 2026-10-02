@@ -29,6 +29,10 @@ ERROR 枚举与 BLOCK_NO_DROP 同纹理；新实现应将它作为 Classic 呈�
 
 ## 26.3 实施结果
 
+Stage 2 将内部逻辑替换为 Snapshot → Providers → 独立动作槽 Resolver →
+Semantic State → ClassicPresentation；下列 Classic 行为与资源保持不变，
+全部原有集成测试在新链路下再次通过。详见 `stage-2-report.md`。
+
 现已完成迁移：MISS / ENTITY /
 valid harvest / invalid harvest / creative / unbreakable / bow / crossbow /
 双手优先级均由真实客户端集成测试验证（16 项）。

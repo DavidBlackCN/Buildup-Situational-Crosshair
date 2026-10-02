@@ -1,15 +1,14 @@
 package dev.buildup.situationalcrosshair.hud;
 
 import dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient;
-import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairResolver;
 import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairType;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 public final class CrosshairHudRenderer {
     private static final Identifier VANILLA_CROSSHAIR = Identifier.withDefaultNamespace("hud/crosshair");
@@ -25,9 +24,9 @@ public final class CrosshairHudRenderer {
 
     private CrosshairHudRenderer() { }
 
-    public static void register() {
+    public static void register(Supplier<ClassicCrosshairType> presentation) {
         HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, original -> (graphics, delta) -> {
-            pending = ClassicCrosshairResolver.resolve(Minecraft.getInstance());
+            pending = presentation.get();
             vanillaRequestedCrosshair = false;
             try {
                 // Vanilla owns visibility, spectator checks, debug behavior and

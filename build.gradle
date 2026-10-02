@@ -34,6 +34,17 @@ java {
     targetCompatibility = JavaVersion.VERSION_25
 }
 
+tasks.register('semanticTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.buildup.situationalcrosshair.semantic.SemanticCoreTest'
+}
+check.dependsOn semanticTest
+tasks.named('test') {
+    // This executable contract suite is run by semanticTest, not a JUnit runner.
+    exclude '**/SemanticCoreTest.class'
+}
+
 fabricApi {
     configureTests {
         createSourceSet = true

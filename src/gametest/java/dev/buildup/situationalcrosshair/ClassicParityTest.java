@@ -44,10 +44,18 @@ public final class ClassicParityTest implements FabricClientGameTest {
                 expect(client, ClassicCrosshairType.BLOCK, "dirt empty hand");
                 client.level.setBlock(pos, Blocks.DIAMOND_ORE.defaultBlockState(), 3);
                 expect(client, ClassicCrosshairType.ERROR, "ore empty hand");
+                var oreSnapshot = dev.buildup.situationalcrosshair.crosshair.ContextCapture.capture(client);
+                if (oreSnapshot.breakability() != dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.Capability.YES
+                        || oreSnapshot.harvestability() != dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.Capability.NO) {
+                    throw new AssertionError("Breakability and harvestability must be independent");
+                }
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.WOODEN_PICKAXE));
                 expect(client, ClassicCrosshairType.ERROR, "insufficient tier");
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
                 expect(client, ClassicCrosshairType.BLOCK, "correct tier");
+                if (oreSnapshot.harvestability() != dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.Capability.NO) {
+                    throw new AssertionError("Captured facts changed with live inventory");
+                }
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SHOVEL));
                 expect(client, ClassicCrosshairType.ERROR, "wrong tool");
                 client.level.setBlock(pos, Blocks.BEDROCK.defaultBlockState(), 3);
