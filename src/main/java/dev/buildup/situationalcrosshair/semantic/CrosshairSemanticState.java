@@ -5,7 +5,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public record CrosshairSemanticState(TargetType target, Visibility visibility,
-        ResolvedAction primary, ResolvedAction secondary, List<ActionCandidate> candidates) {
+        ResolvedAction primary, ResolvedAction secondary, List<ActionCandidate> candidates,
+        CrosshairContextSnapshot.HandState mainHand, CrosshairContextSnapshot.HandState offHand) {
     public record ResolvedAction(ActionKind action, ActionState state, Optional<ActionCandidate> evidence) {
         public ResolvedAction {
             Objects.requireNonNull(action);
@@ -29,6 +30,8 @@ public record CrosshairSemanticState(TargetType target, Visibility visibility,
         Objects.requireNonNull(visibility);
         Objects.requireNonNull(primary);
         Objects.requireNonNull(secondary);
+        Objects.requireNonNull(mainHand);
+        Objects.requireNonNull(offHand);
         candidates = List.copyOf(candidates);
         validate(primary, ActionSlot.PRIMARY, candidates);
         validate(secondary, ActionSlot.SECONDARY, candidates);

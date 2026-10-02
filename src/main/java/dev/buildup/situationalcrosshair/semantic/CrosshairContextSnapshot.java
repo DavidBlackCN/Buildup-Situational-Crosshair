@@ -4,7 +4,13 @@ import java.util.Objects;
 
 /** Value-only facts, captured once; no live mutable Minecraft references. */
 public record CrosshairContextSnapshot(TargetType target, Visibility visibility, boolean creative,
-        Capability breakability, Capability harvestability, HandState mainHand, HandState offHand) {
+        Capability breakability, Capability harvestability, HandState mainHand, HandState offHand,
+        java.util.List<UseAttempt> useAttempts, boolean attackCooling, boolean spectator, boolean nativeCaptured) {
+    public CrosshairContextSnapshot(TargetType target, Visibility visibility, boolean creative,
+            Capability breakability, Capability harvestability, HandState mainHand, HandState offHand) {
+        this(target, visibility, creative, breakability, harvestability, mainHand, offHand,
+                java.util.List.of(), false, false, false);
+    }
     public enum Capability { UNKNOWN, YES, NO }
     public enum RangedItem { NONE, BOW, CROSSBOW }
     public enum Hand { MAIN, OFF, NONE }
@@ -25,6 +31,7 @@ public record CrosshairContextSnapshot(TargetType target, Visibility visibility,
         Objects.requireNonNull(harvestability);
         Objects.requireNonNull(mainHand);
         Objects.requireNonNull(offHand);
+        useAttempts = java.util.List.copyOf(useAttempts);
     }
 
     public static CrosshairContextSnapshot unavailable(Visibility visibility) {

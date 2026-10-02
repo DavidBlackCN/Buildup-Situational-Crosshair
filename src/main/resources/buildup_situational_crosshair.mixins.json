@@ -2,6 +2,6 @@
   "required": true,
   "package": "dev.buildup.situationalcrosshair.mixin",
   "compatibilityLevel": "JAVA_25",
-  "client": ["HudCrosshairMixin"],
+  "client": ["HudCrosshairMixin", "BlockItemAccessor"],
   "injectors": {"defaultRequire": 1}
 }

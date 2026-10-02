@@ -6,6 +6,7 @@ import static dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot
 public final class ClassicCrossbowProvider implements CandidateProvider {
     @Override
     public void collect(CrosshairContextSnapshot context, CandidateCollector collector) {
+        if (context.nativeCaptured()) return; // Real runtime input precedence is handled by VanillaUseProvider.
         // Preserve existing Classic offhand selection, including an offhand bow.
         var hand = context.offHand().rangedItem() != RangedItem.NONE ? context.offHand() : context.mainHand();
         if (!hand.charged()) return;

@@ -9,7 +9,9 @@ public final class ClassicPresentation {
     public static ClassicCrosshairType map(CrosshairSemanticState state) {
         if (state.visibility() != Visibility.SHOW) return null;
         // Existing charged-crossbow appearance, without calling it a melee ATTACK action.
-        if (state.secondary().action() == ActionKind.USE && state.secondary().state() == ActionState.READY)
+        var classicHand = state.offHand().rangedItem() != CrosshairContextSnapshot.RangedItem.NONE
+                ? state.offHand() : state.mainHand();
+        if (classicHand.charged())
             return ClassicCrosshairType.ATTACK;
         return switch (state.target()) {
             case MISS -> ClassicCrosshairType.DOT;

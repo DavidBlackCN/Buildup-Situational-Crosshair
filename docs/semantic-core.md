@@ -1,23 +1,25 @@
-# Stage 2 ? Semantic Core
+# Semantic Core (Stages 2–3)
 
 Authority: workspace-root `Buildup-Situational-Crosshair-Development-Stages.md`,
-global principles and Stage 2. This document describes the implemented contract.
+global principles and Stages 2–3. This document describes the implemented contract.
 
 ## Pipeline
 
-Client composition root ? visibility preflight / ContextCapture ? immutable
-CrosshairContextSnapshot ? CandidateProvider / per-cycle CandidateCollector ?
-CrosshairResolver ? CrosshairSemanticState ? ClassicPresentation ? HUD renderer.
+Client composition root → visibility preflight / ContextCapture → immutable
+CrosshairContextSnapshot → CandidateProvider / per-cycle CandidateCollector →
+CrosshairResolver → CrosshairSemanticState → ClassicPresentation → HUD renderer.
 
 PRIMARY is the left-click action channel; SECONDARY is the right-click/use channel.
 They are resolved independently, never as first/second place in a shared ranking.
 
 ## Facts and vocabulary
 
-Snapshots contain only the values needed for Classic parity: target type, visibility,
+Snapshots contain target type, visibility,
 creative state, breakability, harvestability, and both hands' ranged identity,
-stored charge and use state. No mutable ItemStack/player/world escapes capture.
-All providers see the same snapshot object. More fields require a Stage 3 use case.
+stored charge and use state, attack cooldown, spectator state and ordered native
+use attempts (PASS / ACTION / UNKNOWN, hand, action/state and evidence).
+No mutable ItemStack/player/world escapes capture.
+All providers see the same snapshot object.
 No provider invokes global Minecraft or executes world interactions.
 
 TargetType: MISS, BLOCK, ENTITY.
@@ -52,29 +54,44 @@ Stage 1's exact suppression mechanism rather than duplicating complex vanilla lo
 ## Active providers
 
 - BaseTargetProvider: conservative NONE defaults for both slots.
-- HarvestProvider: block PRIMARY MINE/NORMAL or MINE/INVALID from current harvest facts.
-- EntityAttackProvider: entity-hit PRIMARY ATTACK/NORMAL, matching the local baseline;
+- HarvestProvider: block PRIMARY MINE/NORMAL or MINE/INVALID from current harvest facts;
+  spectator mining is BLOCKED.
+- EntityAttackProvider: entity-hit PRIMARY ATTACK/NORMAL, COOLDOWN or spectator BLOCKED;
   this is an action-channel classification, not a guarantee of server damage permission.
-- ClassicCrossbowProvider: only the pre-existing charged-crossbow exception,
-  SECONDARY USE/READY with historical offhand precedence. No new bow charging,
-  ammo discovery, effective-use simulation or general ranged capability system.
+- VanillaUseProvider: consumes ordered, immutable native probes to select the
+  effective SECONDARY action. PASS continues; UNKNOWN stops conservatively;
+  cooldown permits trying the other hand. The first consuming/blocked action wins.
+  ClassicCrossbowProvider remains only as a legacy contract fixture and does not
+  participate in the client pipeline.
+
+VanillaCapabilityCapture reads native block interactions, placement validation,
+BLOCK_TRANSFORMER providers, bonemeal, selected entity interactions, buckets,
+consumables, blocking items and ranged state. It never calls use/useOn/place or
+transformBlock to discover behavior. getPlacementState requires a narrow Mixin
+Invoker because it is protected; native survival/collision checks are retained.
+Base block interaction method ownership is cached per class, without executing
+unknown handlers. Unknown behavior prevents claiming a later hand action.
+See [Stage 3 report](stage-3-report.md) for supported cases and limits.
 
 The full source/specificity/confidence vocabulary is represented but external
 provider discovery, public Mod API and JSON rule loading are not implemented.
 
 ## Classic mapping
 
-- MISS/NONE ? DOT.
-- BLOCK + PRIMARY MINE/NORMAL ? BLOCK.
-- BLOCK + PRIMARY MINE/INVALID ? ERROR.
-- ENTITY + PRIMARY ATTACK ? ATTACK.
-- Existing SECONDARY USE/READY charged-crossbow result ? ATTACK glyph, without
-  changing PRIMARY to ATTACK.
-- Unknown/unrepresentable result ? vanilla fallback.
+- MISS/NONE → DOT.
+- BLOCK + PRIMARY MINE/NORMAL → BLOCK.
+- BLOCK + PRIMARY MINE/INVALID → ERROR.
+- ENTITY + PRIMARY ATTACK → ATTACK.
+- Historical selected-hand charged crossbow → ATTACK glyph, without changing
+  PRIMARY or effective SECONDARY. Hand facts travel with the semantic result;
+  only ClassicPresentation chooses the historical offhand visual precedence.
+- Bow READY does not imply an ATTACK glyph.
+- Unknown/unrepresentable result → vanilla fallback.
 
 Presentation is pure Java with no textures, world reads or render calls. Renderer
 receives a presentation supplier and owns texture selection; it does not read
-Minecraft target/player state. Textures, blend pipeline and minimal Mixin are unchanged.
+Minecraft target/player state. Textures, blend pipeline and HUD suppression Mixin
+are unchanged. The additional placement accessor performs no rendering.
 
 ## Tests
 

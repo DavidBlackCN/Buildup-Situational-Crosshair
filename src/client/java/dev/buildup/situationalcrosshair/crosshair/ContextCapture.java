@@ -11,7 +11,7 @@ import dev.buildup.situationalcrosshair.semantic.TargetType;
 import dev.buildup.situationalcrosshair.semantic.Visibility;
 import static dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.*;
 
-/** The only semantic adapter that reads live Minecraft state. */
+/** Captures live state through the native adapters, then publishes one value-only snapshot. */
 public final class ContextCapture {
     private ContextCapture() { }
 
@@ -38,7 +38,9 @@ public final class ContextCapture {
         }
         return new CrosshairContextSnapshot(kind, Visibility.SHOW, player.isCreative(), breakability, harvestability,
                 hand(player.getMainHandItem(), player.isUsingItem() && player.getUsedItemHand() == InteractionHand.MAIN_HAND),
-                hand(player.getOffhandItem(), player.isUsingItem() && player.getUsedItemHand() == InteractionHand.OFF_HAND));
+                hand(player.getOffhandItem(), player.isUsingItem() && player.getUsedItemHand() == InteractionHand.OFF_HAND),
+                VanillaCapabilityCapture.capture(client), player.getAttackStrengthScale(0) < 1,
+                player.isSpectator(), true);
     }
 
     private static HandState hand(ItemStack stack, boolean using) {

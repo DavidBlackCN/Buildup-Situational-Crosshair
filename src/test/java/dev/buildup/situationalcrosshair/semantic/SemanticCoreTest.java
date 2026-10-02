@@ -99,7 +99,49 @@ public final class SemanticCoreTest {
         var shared = new CrosshairResolver(List.of((context, sink) -> check(context == valid, "first shared snapshot"),
                 (context, sink) -> check(context == valid, "second shared snapshot")));
         shared.resolve(valid);
+        nativeUseContracts();
         System.out.println("PASS: " + checks + " semantic/presentation contract checks");
+    }
+
+    private static void nativeUseContracts() {
+        var interact = attempt(UseAttempt.Disposition.ACTION, ActionKind.INTERACT, ActionState.NORMAL, Hand.MAIN);
+        var place = attempt(UseAttempt.Disposition.ACTION, ActionKind.PLACE, ActionState.NORMAL, Hand.OFF);
+        var cooling = attempt(UseAttempt.Disposition.ACTION, ActionKind.USE, ActionState.COOLDOWN, Hand.MAIN);
+        var unknown = attempt(UseAttempt.Disposition.UNKNOWN, ActionKind.NONE, ActionState.NORMAL, Hand.MAIN);
+        var pass = attempt(UseAttempt.Disposition.PASS, ActionKind.NONE, ActionState.NORMAL, Hand.MAIN);
+        var resolver = new CrosshairResolver(List.of(new BaseTargetProvider(), new HarvestProvider(),
+                new EntityAttackProvider(), new VanillaUseProvider()));
+        var attempts = new ArrayList<>(List.of(interact, place));
+        var snapshot = nativeSnapshot(attempts, false);
+        attempts.clear();
+        var result = resolver.resolve(snapshot);
+        check(result.secondary().action() == ActionKind.INTERACT, "interaction precedes placement; snapshot owns list");
+        check(result.primary().action() == ActionKind.MINE, "use preserves primary mining");
+        check(resolver.resolve(nativeSnapshot(List.of(pass, place), false)).secondary().action() == ActionKind.PLACE,
+                "pass reaches offhand placement");
+        check(resolver.resolve(nativeSnapshot(List.of(unknown, place), false)).secondary().action() == ActionKind.NONE,
+                "unknown preceding handler prevents speculative use");
+        check(resolver.resolve(nativeSnapshot(List.of(cooling, place), false)).secondary().action() == ActionKind.PLACE,
+                "cooling main hand permits offhand use");
+        check(resolver.resolve(nativeSnapshot(List.of(cooling, pass), false)).secondary().state() == ActionState.COOLDOWN,
+                "cooldown retained without another effective action");
+        check(resolver.resolve(nativeSnapshot(List.of(cooling, unknown), false)).secondary().action() == ActionKind.NONE,
+                "uncertain offhand prevents false cooldown claim");
+        check(resolver.resolve(nativeSnapshot(List.of(interact), true)).secondary().action() == ActionKind.NONE,
+                "spectator has no gameplay use candidate");
+        var ready = attempt(UseAttempt.Disposition.ACTION, ActionKind.USE, ActionState.READY, Hand.MAIN);
+        check(ClassicPresentation.map(resolver.resolve(nativeSnapshot(List.of(ready), false))) == ClassicCrosshairType.BLOCK,
+                "ranged READY alone does not become Classic ATTACK");
+    }
+
+    private static UseAttempt attempt(UseAttempt.Disposition disposition, ActionKind action, ActionState state, Hand hand) {
+        return new UseAttempt(disposition, action, state, hand, CandidateSource.VANILLA_RUNTIME,
+                Confidence.STRONG, "test:use");
+    }
+
+    private static CrosshairContextSnapshot nativeSnapshot(List<UseAttempt> attempts, boolean spectator) {
+        return new CrosshairContextSnapshot(TargetType.BLOCK, Visibility.SHOW, false, Capability.YES, Capability.YES,
+                HandState.EMPTY, HandState.EMPTY, attempts, false, spectator, true);
     }
 
     private static CrosshairSemanticState resolve(CrosshairContextSnapshot context, List<ActionCandidate> candidates) {
