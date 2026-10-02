@@ -1,7 +1,12 @@
 # Classic / Classic+ presentation
 
-Classic+ is the default enhanced experience. Classic preserves the historical
-four-glyph policy, including the charged-crossbow appearance and hand precedence.
+Buildup Situational Crosshair is an immersive contextual hint system, not a dense functional HUD.
+
+Semantic information may intentionally remain invisible when Minecraft already communicates it adequately or when its visual value does not justify occupying the center of the screen.
+
+**Semantic State ≠ Visible Icon.** Stage 5.1 replaces the Stage 5 status cluster.
+Classic+ is the default. Classic preserves the historical four-glyph policy,
+charged-crossbow appearance and hand precedence, with no decorations.
 
 Client-only commands, available while in a world:
 
@@ -19,41 +24,48 @@ Persistent configuration and a settings GUI belong to Stage 7.
 
 ## Visual language
 
-The original 15×15 texture stays at its original centered position. Classic+ adds
-one 5×5 secondary glyph to the lower right. The glyph's one-pixel dark outline
-helps distinguish it against bright and dark backgrounds. Shapes carry meaning
-without relying on color. No candidate list is displayed.
+The original 15×15 texture and centered position are unchanged. Classic+ adds at
+most one **3×3 foreground** micro hint, with a one-pixel bottom/right drop shadow
+only. Its complete **4×4 envelope starts at (11,11)** inside the old canvas.
+The maximum footprint is **15×15 GUI pixels**. There is no full halo, independent
+status icon, third symbol, gameplay text, timer or progress ring. Base and hint
+follow ordinary Minecraft GUI scale, without inverse scaling.
 
-| Secondary action | Symbol |
+| Effective secondary | Default presentation |
 | --- | --- |
-| INTERACT | Speech bubble |
-| USE | Filled drop |
-| PLACE | Inset square block |
-| TRANSFORM | Two opposing arrows |
-| SPECIAL | Hollow diamond |
+| INTERACT / NORMAL | Tiny open speech mark |
+| PLACE / NORMAL | Tiny hollow block |
+| TRANSFORM / NORMAL | Opposed corner strokes |
+| USE / NORMAL on BLOCK or ENTITY | Tiny drop, unless recognized as item-global self-use |
+| USE on MISS | Hidden |
+| SPECIAL | Hidden |
+| Non-NORMAL secondary | Hidden, except effective loaded-crossbow READY below |
 
-Only the resolved secondary action appears. Its status is a small glyph above it;
-the primary action's status sits to the left of the base. NORMAL has no status
-glyph. Each channel can show its own state without suppressing the other channel.
+Known native consumable, blocking-item/shield, spyglass and ranged self-use origins
+are suppressed even when the ray happens to hit a target. Other NORMAL USE on
+BLOCK/ENTITY may show a drop. This is a conservative target gate, not a new
+classifier of every modded item's behavior. Pack rules retain their resolved
+meaning. Presentation never re-ranks candidates or guesses unknown behavior.
 
-| Action state | Symbol |
+| Semantic fact | Classic+ appearance |
 | --- | --- |
-| CHARGING | Rising outline |
-| READY | Check mark |
-| COOLDOWN | Hourglass |
-| BLOCKED | Lock |
-| INVALID | Cross |
+| MISS | DOT |
+| MINE / NORMAL | BLOCK |
+| MINE / INVALID | ERROR, without another X |
+| Entity ATTACK / NORMAL or COOLDOWN | ATTACK; Vanilla attack indicator retained |
+| USE / CHARGING, including bow into air | Target base only; no charging or USE symbol |
+| Effective native loaded crossbow USE / READY | ATTACK-style base only |
+| Other READY, secondary BLOCKED / INVALID / COOLDOWN | Target base only; unavailable action hint hidden |
 
-Classic+ retains BLOCK for MINE, ERROR for MINE/INVALID and ATTACK for entity
-ATTACK. Unrepresented primary actions use DOT conservatively. Ranged READY is
-represented by USE + READY on the target's base, so a loaded crossbow aimed at
-air shows DOT with a drop and check mark. Classic's older attack appearance
-remains available by choosing Classic.
+The ranged alias requires the resolved secondary's existing native crossbow/main
+or crossbow/off provenance and that same hand's charged-crossbow fact. A READY
+bow, unrelated charged hand or generic pack READY does not qualify. The semantic
+result remains **SECONDARY USE / READY**, never ATTACK. An effective chest
+interaction still shows BLOCK + INTERACT even when holding a loaded crossbow.
 
-The decoration footprint is 23×16 GUI pixels in the maximum case. Actual opaque
-Classic pixels occupy x/y 4–10 within the old texture (DOT is at 7/7); the new
-foreground and outlines never cover those pixels. The main glyph is always opaque
-and does not move. Vanilla continues to determine whether its central crosshair
+Actual PNG alpha masks are tested for every base/modifier combination: no hint
+pixel covers any opaque DOT/BLOCK/ATTACK/ERROR pixel. The main glyph is always
+opaque and stationary. Vanilla continues to determine whether its central crosshair
 would be submitted. F1, third person, debug crosshair and missing-context fallback
 cannot leave decoration ghosts. Vanilla attack indicators keep their existing path.
 
@@ -75,19 +87,28 @@ Resolved Semantic State
   → CrosshairHudRenderer / CrosshairDecorationRenderer
 ```
 
-The pure presentation model carries a base choice, one secondary modifier and
-per-channel states. Texture paths and Minecraft drawing APIs belong only to the
+The pure presentation model carries visibility, a base and one optional modifier;
+the renderer receives no primary/secondary status channels. Texture paths and Minecraft drawing APIs belong only to the
 renderer. Semantic classes have no presentation imports or texture knowledge.
-`PixelGlyph` contains original code-defined pixel patterns, cached once. Classic
+`PixelGlyph` contains four original micro patterns, cached once. Classic
 PNG assets are byte-for-byte unchanged. No new bitmap artwork is generated.
 
 ## Visual evidence
 
 Real Minecraft screenshots generated by the production drawing path:
 
-- [GUI scale 1](validation/stage-5-gallery-scale-1.png)
-- [GUI scale 2](validation/stage-5-gallery-scale-2.png)
+- GUI scale 1: [dark](validation/stage-5.1-gallery-scale-1-dark.png), [light](validation/stage-5.1-gallery-scale-1-light.png)
+- GUI scale 2: [dark](validation/stage-5.1-gallery-scale-2-dark.png), [light](validation/stage-5.1-gallery-scale-2-light.png)
+- GUI scale 3: [dark](validation/stage-5.1-gallery-scale-3-dark.png), [light](validation/stage-5.1-gallery-scale-3-light.png)
 
-These galleries show identical glyphs on dark and light backgrounds. They establish
-static readability at ordinary GUI scales; natural aiming, varied backgrounds and
-coexistence with other HUD mods still benefit from manual play testing.
+Scenes, left-to-right/top-to-bottom: Air (DOT), Block, Bad tool (ERROR), Entity
+(ATTACK), Chest (BLOCK + INTERACT), Place (BLOCK + PLACE), Convert (BLOCK +
+TRANSFORM), Crop use (BLOCK + USE), Trade (ATTACK + INTERACT), Bow draw (DOT only),
+Xbow rdy (ATTACK only), Atk CD (ATTACK only), Blocked (BLOCK only), Invalid
+secondary (BLOCK only), Special (BLOCK only).
+
+Labels/backgrounds belong only to the test Screen, not the gameplay HUD. These
+synthetic semantic scenes use the production policy and renderer. Real native
+capture is separately tested for chest, bow and crossbow. Static screenshots do
+not prove natural-play animation comfort or all scenery/modpack combinations.
+See the [Stage 5.1 report](stage-5.1-report.md) for visual review and validation.

@@ -1,5 +1,8 @@
 # Stage 5 — Classic+ Presentation
 
+> Historical Stage 5 baseline. Its visual policy is superseded by
+> [Stage 5.1](stage-5.1-report.md); original validation evidence is retained.
+
 ## Result: PASS
 
 Version **0.1.0-alpha.5+mc26.3**. Scope: authoritative workspace-root development

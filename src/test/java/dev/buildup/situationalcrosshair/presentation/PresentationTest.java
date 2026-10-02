@@ -24,23 +24,60 @@ public final class PresentationTest {
                 "BLOCK + TRANSFORM retains block base");
         var attackInteract = PresentationResolver.resolve(semantic(TargetType.ENTITY, ActionKind.ATTACK, ActionState.COOLDOWN,
                 ActionKind.INTERACT, ActionState.NORMAL), CrosshairTheme.CLASSIC_PLUS);
-        check(attackInteract.base() == ClassicCrosshairType.ATTACK && attackInteract.modifier() == CrosshairPresentation.SecondaryModifier.INTERACT
-                && attackInteract.primaryStatus() == ActionState.COOLDOWN, "ATTACK + INTERACT + primary cooldown");
-        for (var action : List.of(ActionKind.INTERACT, ActionKind.USE, ActionKind.PLACE, ActionKind.TRANSFORM, ActionKind.SPECIAL)) {
-            for (var status : ActionState.values()) {
-                var mapped = PresentationResolver.resolve(semantic(TargetType.MISS, ActionKind.NONE, ActionState.NORMAL, action, status), CrosshairTheme.CLASSIC_PLUS);
-                check(mapped.base() == ClassicCrosshairType.DOT && mapped.modifier().name().equals(action.name()) && mapped.secondaryStatus() == status,
-                        "secondary action/status " + action + "/" + status);
+        check(attackInteract.base() == ClassicCrosshairType.ATTACK && attackInteract.modifier() == CrosshairPresentation.SecondaryModifier.INTERACT,
+                "cooldown keeps ATTACK + INTERACT without a third element");
+        check(PresentationResolver.resolve(semantic(TargetType.ENTITY, ActionKind.ATTACK, ActionState.COOLDOWN,
+                ActionKind.NONE, ActionState.NORMAL), CrosshairTheme.CLASSIC_PLUS).modifier() == CrosshairPresentation.SecondaryModifier.NONE,
+                "attack cooldown has no auxiliary glyph");
+        check(PresentationResolver.resolve(semantic(TargetType.BLOCK, ActionKind.MINE, ActionState.INVALID,
+                ActionKind.NONE, ActionState.NORMAL), CrosshairTheme.CLASSIC_PLUS).equals(
+                new CrosshairPresentation(Visibility.SHOW, ClassicCrosshairType.ERROR, CrosshairPresentation.SecondaryModifier.NONE)),
+                "invalid harvest is ERROR only");
+        for (var target : TargetType.values()) {
+            for (var action : List.of(ActionKind.INTERACT, ActionKind.USE, ActionKind.PLACE, ActionKind.TRANSFORM, ActionKind.SPECIAL)) {
+                for (var status : ActionState.values()) {
+                    var state = semantic(target, ActionKind.NONE, ActionState.NORMAL, action, status);
+                    var mapped = PresentationResolver.resolve(state, CrosshairTheme.CLASSIC_PLUS);
+                    boolean show = status == ActionState.NORMAL && action != ActionKind.SPECIAL
+                            && (action != ActionKind.USE || target != TargetType.MISS);
+                    check(show ? mapped.modifier().name().equals(action.name())
+                            : mapped.modifier() == CrosshairPresentation.SecondaryModifier.NONE,
+                            "selective visibility " + target + "/" + action + "/" + status);
+                    check(state.secondary().action() == action && state.secondary().state() == status
+                            && state.secondary().evidence().get().equals(state.candidates().get(1)),
+                            "presentation preserves action/state/evidence");
+                }
             }
         }
         var charged = new HandState(CrosshairContextSnapshot.RangedItem.CROSSBOW, true, false);
-        var rangedState = semantic(TargetType.MISS, ActionKind.NONE, ActionState.NORMAL, ActionKind.USE, ActionState.READY);
-        rangedState = new CrosshairSemanticState(rangedState.target(), rangedState.visibility(), rangedState.primary(), rangedState.secondary(),
-                rangedState.candidates(), charged, HandState.EMPTY);
-        check(PresentationResolver.resolve(rangedState, CrosshairTheme.CLASSIC).base() == ClassicCrosshairType.ATTACK, "Classic charged appearance preserved");
-        var rangedPlus = PresentationResolver.resolve(rangedState, CrosshairTheme.CLASSIC_PLUS);
-        check(rangedPlus.base() == ClassicCrosshairType.DOT && rangedPlus.modifier() == CrosshairPresentation.SecondaryModifier.USE
-                && rangedPlus.secondaryStatus() == ActionState.READY, "Classic+ ranged READY is USE instead of attack appearance");
+        for (String hand : List.of("main", "off")) {
+            var rangedState = withEvidence(semantic(TargetType.MISS, ActionKind.NONE, ActionState.NORMAL, ActionKind.USE, ActionState.READY),
+                    CandidateSource.VANILLA_RUNTIME, "buildup_situational_crosshair:crossbow/" + hand,
+                    hand.equals("main") ? charged : HandState.EMPTY, hand.equals("off") ? charged : HandState.EMPTY);
+            check(PresentationResolver.resolve(rangedState, CrosshairTheme.CLASSIC).base() == ClassicCrosshairType.ATTACK, "Classic charged appearance preserved");
+            check(PresentationResolver.resolve(rangedState, CrosshairTheme.CLASSIC_PLUS).equals(
+                    new CrosshairPresentation(Visibility.SHOW, ClassicCrosshairType.ATTACK, CrosshairPresentation.SecondaryModifier.NONE)),
+                    "effective loaded crossbow READY reuses only ATTACK base");
+            check(rangedState.secondary().action() == ActionKind.USE && rangedState.secondary().state() == ActionState.READY,
+                    "READY remains secondary USE");
+        }
+        var ready = semantic(TargetType.MISS, ActionKind.NONE, ActionState.NORMAL, ActionKind.USE, ActionState.READY);
+        for (var source : List.of(CandidateSource.VANILLA_RUNTIME, CandidateSource.PACK_RULE)) {
+            var unrelated = withEvidence(ready, source, source == CandidateSource.PACK_RULE
+                    ? "buildup_situational_crosshair:crossbow/off" : "buildup_situational_crosshair:bow/main", HandState.EMPTY, charged);
+            check(PresentationResolver.resolve(unrelated, CrosshairTheme.CLASSIC_PLUS).base() == ClassicCrosshairType.DOT,
+                    "unrelated charged hand/pack READY never fabricates ranged ready");
+        }
+        check(PresentationResolver.resolve(withEvidence(ready, CandidateSource.VANILLA_RUNTIME,
+                "buildup_situational_crosshair:crossbow/main", HandState.EMPTY, charged), CrosshairTheme.CLASSIC_PLUS).base() == ClassicCrosshairType.DOT,
+                "native provenance still requires charged effective hand");
+        for (String origin : List.of("consumable", "blocking_item", "spyglass", "bow", "crossbow")) {
+            var selfUse = withEvidence(semantic(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.USE, ActionState.NORMAL),
+                    origin.equals("consumable") || origin.equals("blocking_item") ? CandidateSource.VANILLA_COMPONENT : CandidateSource.VANILLA_RUNTIME,
+                    "buildup_situational_crosshair:" + origin + "/main", HandState.EMPTY, HandState.EMPTY);
+            check(PresentationResolver.resolve(selfUse, CrosshairTheme.CLASSIC_PLUS).modifier() == CrosshairPresentation.SecondaryModifier.NONE,
+                    "item-global use stays quiet even over a target");
+        }
         for (var visibility : List.of(Visibility.HIDE, Visibility.VANILLA)) {
             var state = new CrosshairResolver(List.of()).resolve(CrosshairContextSnapshot.unavailable(visibility));
             for (var theme : CrosshairTheme.values()) {
@@ -56,9 +93,10 @@ public final class PresentationTest {
         var unique = new HashSet<PixelGlyph>();
         for (var modifier : CrosshairPresentation.SecondaryModifier.values()) if (modifier != CrosshairPresentation.SecondaryModifier.NONE)
             check(unique.add(PixelGlyph.modifier(modifier)), "distinct action glyph " + modifier);
-        unique.clear();
-        for (var status : ActionState.values()) if (status != ActionState.NORMAL) check(unique.add(PixelGlyph.status(status)), "distinct status " + status);
-        check(PixelGlyph.modifier(CrosshairPresentation.SecondaryModifier.NONE) == null && PixelGlyph.status(ActionState.NORMAL) == null, "absence draws no detail");
+        check(PixelGlyph.modifier(CrosshairPresentation.SecondaryModifier.NONE) == null, "absence draws no detail");
+        check(CrosshairPresentation.class.getRecordComponents().length == 3, "render model has no independent status channels");
+        check(PixelGlyph.SIZE == 3, "micro foreground budget");
+        check(ActionState.values().length == 6 && ActionKind.valueOf("SPECIAL") == ActionKind.SPECIAL, "semantic states/actions retained");
 
         var transition = new TransitionController();
         check(transition.update(blockTransform, TransitionMode.OFF, 0).detailOpacity() == 1, "OFF is immediate");
@@ -81,6 +119,13 @@ public final class PresentationTest {
         var b = candidate(ActionSlot.SECONDARY, secondary, secondaryStatus);
         return new CrosshairSemanticState(target, Visibility.SHOW, CrosshairSemanticState.ResolvedAction.of(a),
                 CrosshairSemanticState.ResolvedAction.of(b), List.of(a, b), HandState.EMPTY, HandState.EMPTY);
+    }
+    private static CrosshairSemanticState withEvidence(CrosshairSemanticState state, CandidateSource source, String origin,
+            HandState main, HandState off) {
+        var evidence = new ActionCandidate(ActionSlot.SECONDARY, state.secondary().action(), state.secondary().state(),
+                source, Specificity.EXACT_CONTEXT, Confidence.EXACT, 0, origin);
+        return new CrosshairSemanticState(state.target(), state.visibility(), state.primary(), CrosshairSemanticState.ResolvedAction.of(evidence),
+                List.of(state.candidates().get(0), evidence), main, off);
     }
     private static ActionCandidate candidate(ActionSlot slot, ActionKind action, ActionState status) {
         return new ActionCandidate(slot, action, status, CandidateSource.VANILLA_RUNTIME, Specificity.EXACT_CONTEXT, Confidence.EXACT, 0,
