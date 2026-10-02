@@ -1,11 +1,19 @@
 package dev.buildup.situationalcrosshair.semantic;
 
 import java.util.Objects;
+import dev.buildup.situationalcrosshair.rules.RuleFacts;
 
 /** Value-only facts, captured once; no live mutable Minecraft references. */
 public record CrosshairContextSnapshot(TargetType target, Visibility visibility, boolean creative,
         Capability breakability, Capability harvestability, HandState mainHand, HandState offHand,
-        java.util.List<UseAttempt> useAttempts, boolean attackCooling, boolean spectator, boolean nativeCaptured) {
+        java.util.List<UseAttempt> useAttempts, boolean attackCooling, boolean spectator, boolean nativeCaptured,
+        RuleFacts ruleFacts) {
+    public CrosshairContextSnapshot(TargetType target, Visibility visibility, boolean creative,
+            Capability breakability, Capability harvestability, HandState mainHand, HandState offHand,
+            java.util.List<UseAttempt> useAttempts, boolean attackCooling, boolean spectator, boolean nativeCaptured) {
+        this(target, visibility, creative, breakability, harvestability, mainHand, offHand,
+                useAttempts, attackCooling, spectator, nativeCaptured, RuleFacts.EMPTY);
+    }
     public CrosshairContextSnapshot(TargetType target, Visibility visibility, boolean creative,
             Capability breakability, Capability harvestability, HandState mainHand, HandState offHand) {
         this(target, visibility, creative, breakability, harvestability, mainHand, offHand,
@@ -31,6 +39,7 @@ public record CrosshairContextSnapshot(TargetType target, Visibility visibility,
         Objects.requireNonNull(harvestability);
         Objects.requireNonNull(mainHand);
         Objects.requireNonNull(offHand);
+        Objects.requireNonNull(ruleFacts);
         useAttempts = java.util.List.copyOf(useAttempts);
     }
 

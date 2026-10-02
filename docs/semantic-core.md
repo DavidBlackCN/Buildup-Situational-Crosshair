@@ -1,7 +1,7 @@
-# Semantic Core (Stages 2–3)
+# Semantic Core (Stages 2–4)
 
 Authority: workspace-root `Buildup-Situational-Crosshair-Development-Stages.md`,
-global principles and Stages 2–3. This document describes the implemented contract.
+global principles and Stages 2–4. This document describes the implemented contract.
 
 ## Pipeline
 
@@ -17,7 +17,8 @@ They are resolved independently, never as first/second place in a shared ranking
 Snapshots contain target type, visibility,
 creative state, breakability, harvestability, and both hands' ranged identity,
 stored charge and use state, attack cooldown, spectator state and ordered native
-use attempts (PASS / ACTION / UNKNOWN, hand, action/state and evidence).
+use attempts (PASS / ACTION / UNKNOWN, hand, action/state and evidence), plus
+rule selector identities/tags/properties and sneaking/use flags when rules are active.
 No mutable ItemStack/player/world escapes capture.
 All providers see the same snapshot object.
 No provider invokes global Minecraft or executes world interactions.
@@ -43,8 +44,9 @@ priority, confidence, origin, then stable slot/action/state ties. Enum order exp
 defines specificity/source/confidence order. There is no combined numeric score.
 INFERRED and UNKNOWN candidates remain inspectable but cannot become selected hints.
 With no reliable candidate, the slot resolves to NONE/NORMAL.
-Deny/override/fallback rule modes are deliberately deferred to Stage 4; priority alone
-cannot defeat stronger specificity/source evidence.
+Stage 4 applies deny and per-slot override before ordinary resolution, and fallback
+only when no reliable ordinary action remains. Priority alone cannot defeat stronger
+specificity/source evidence. See [rule semantics](rules-v0.1.md) for exact mode order.
 
 Visibility short-circuits provider collection for HIDE and VANILLA. Client preflight
 handles absent context, F1 and third person. Vanilla's actual draw request remains
@@ -74,7 +76,9 @@ unknown handlers. Unknown behavior prevents claiming a later hand action.
 See [Stage 3 report](stage-3-report.md) for supported cases and limits.
 
 The full source/specificity/confidence vocabulary is represented but external
-provider discovery, public Mod API and JSON rule loading are not implemented.
+provider discovery and a stable public Mod API are not implemented. JSON rule loading
+now uses immutable compiled resource generations and context indexes; it does not
+execute JSON parsing on the HUD path.
 
 ## Classic mapping
 

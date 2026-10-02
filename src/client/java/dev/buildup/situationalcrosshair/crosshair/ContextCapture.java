@@ -40,7 +40,9 @@ public final class ContextCapture {
                 hand(player.getMainHandItem(), player.isUsingItem() && player.getUsedItemHand() == InteractionHand.MAIN_HAND),
                 hand(player.getOffhandItem(), player.isUsingItem() && player.getUsedItemHand() == InteractionHand.OFF_HAND),
                 VanillaCapabilityCapture.capture(client), player.getAttackStrengthScale(0) < 1,
-                player.isSpectator(), true);
+                player.isSpectator(), true, dev.buildup.situationalcrosshair.rules.RuleManager.current().size() == 0
+                        ? dev.buildup.situationalcrosshair.rules.RuleFacts.EMPTY
+                        : dev.buildup.situationalcrosshair.rules.RuleFactsCapture.capture(client));
     }
 
     private static HandState hand(ItemStack stack, boolean using) {

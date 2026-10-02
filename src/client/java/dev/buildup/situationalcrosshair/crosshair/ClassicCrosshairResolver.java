@@ -7,7 +7,8 @@ import dev.buildup.situationalcrosshair.semantic.*;
 /** Compatibility facade for the unchanged HUD boundary. */
 public final class ClassicCrosshairResolver {
     private static final CrosshairResolver SEMANTICS = new CrosshairResolver(List.of(
-            new BaseTargetProvider(), new HarvestProvider(), new EntityAttackProvider(), new VanillaUseProvider()));
+            new BaseTargetProvider(), new HarvestProvider(), new EntityAttackProvider(), new VanillaUseProvider()),
+            dev.buildup.situationalcrosshair.rules.RuleManager::current);
 
     private ClassicCrosshairResolver() { }
 

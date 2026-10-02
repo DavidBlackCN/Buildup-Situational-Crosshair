@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "mode": "override",
+  "when": {"target": {"type": "block", "ids": ["exampletech:crusher"]}, "held": {"ids": ["exampletech:wrench"]}},
+  "emit": [{"slot": "secondary", "action": "transform"}]
+}

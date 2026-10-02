@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "mode": "deny",
+  "when": {"target": {"type": "block", "ids": ["exampletech:protected_machine"]}, "held": {"tags": ["c:tools/wrench"]}},
+  "emit": [{"slot": "secondary", "action": "transform"}]
+}

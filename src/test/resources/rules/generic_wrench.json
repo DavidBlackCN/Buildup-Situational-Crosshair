@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "mode": "fallback",
+  "when": {"target": {"type": "block"}, "held": {"tags": ["c:tools/wrench"]}},
+  "emit": [{"slot": "secondary", "action": "special"}]
+}
