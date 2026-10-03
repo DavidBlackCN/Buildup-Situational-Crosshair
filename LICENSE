@@ -20,7 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-Scope: independently authored Buildup code and documentation only. Third-party
+Scope: independently authored Buildup code, documentation and original sidecar
+artwork (art/sidecar and the exported sidecar PNGs, including test prototypes). Third-party
 materials and any adaptations remain subject to their own terms. This MIT grant
 does not relicense the Classic artwork or grant additional rights in the original
 Crosshair Mod. See THIRD_PARTY_NOTICES.md and licenses/.

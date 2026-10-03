@@ -1,5 +1,8 @@
 # Stage 5.2 — Classic+ Sidecar Redesign
 
+> Historical Stage 5.2 record. The sidecar artwork/material is superseded by
+> [Stage 5.3](stage-5.3-report.md); fixed left/right roles and selective policy remain.
+
 ## Result: PASS
 
 Version **0.1.0-alpha.5.2+mc26.3**, branch **26.3**, starting from Stage 5.1

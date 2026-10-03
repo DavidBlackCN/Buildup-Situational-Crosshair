@@ -96,14 +96,7 @@ public final class PresentationTest {
                 Specificity.GENERIC, Confidence.STRONG, -100, "test:unused"));
         var irrelevant = new CrosshairSemanticState(valid.target(), valid.visibility(), valid.primary(), valid.secondary(), pool, HandState.EMPTY, HandState.EMPTY);
         check(PresentationResolver.resolve(irrelevant, CrosshairTheme.CLASSIC_PLUS).equals(blockTransform), "presentation uses only resolved secondary");
-        var unique = new HashSet<PixelGlyph>();
-        for (var modifier : CrosshairPresentation.ActionSidecar.values()) if (modifier != CrosshairPresentation.ActionSidecar.NONE)
-            check(unique.add(PixelGlyph.action(modifier)), "distinct action glyph " + modifier);
-        check(PixelGlyph.action(CrosshairPresentation.ActionSidecar.NONE) == null, "absence draws no detail");
-        check(PixelGlyph.state(CrosshairPresentation.StateSidecar.NONE) == null, "no left glyph for absence");
-        check(PixelGlyph.state(CrosshairPresentation.StateSidecar.BLOCKED) != null, "explicit left blocked design");
         check(CrosshairPresentation.class.getRecordComponents().length == 4, "render model has fixed left/right roles");
-        check(PixelGlyph.SIZE == 7, "selected sidecar design budget");
         var blocked = PresentationResolver.resolve(semantic(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.PLACE, ActionState.BLOCKED), CrosshairTheme.CLASSIC_PLUS);
         check(blocked.leftSidecar() == CrosshairPresentation.StateSidecar.BLOCKED && blocked.rightSidecar() == CrosshairPresentation.ActionSidecar.PLACE,
                 "known blocked action shows fixed-role two-sidecar composition");

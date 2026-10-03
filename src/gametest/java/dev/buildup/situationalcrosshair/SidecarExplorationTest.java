@@ -15,32 +15,9 @@ import java.util.List;
 
 /** Bounded design exploration only. None of these choices is a runtime theme. */
 public final class SidecarExplorationTest implements FabricClientGameTest {
-    private record Treatment(String name, String[][] icons) { int size() { return icons[0].length; } }
+    private record Treatment(String name, int size, int stateSize) { }
     private static final List<Treatment> TREATMENTS = List.of(
-            new Treatment("A", new String[][] {
-                    {"##..##", "#....#", "..#...", "..##..", "#....#", "##..##"},
-                    {"..##..", ".#..#.", "#..#.#", "#..#.#", ".#.#.#", "..###."},
-                    {"...#.#", "..#..#", "..###.", ".##...", "##....", ".#...."},
-                    {"..#...", ".#..#.", "#..#.#", ".#..#.", "..#...", "..#..."},
-                    {"..##..", ".#..#.", ".#..#.", ".####.", ".#.##.", ".####."}}),
-            new Treatment("B", new String[][] {
-                    {"##...##", "#.....#", "...#...", "..###..", "...#...", "#.....#", "##...##"},
-                    {"..###..", ".#..##.", "#..#..#", "#..#..#", ".#.#.#.", "..###..", "......."},
-                    {"....#.#", "...#..#", "...###.", "..##...", ".##....", "##.....", ".#....."},
-                    {"...#...", "...#...", ".#...#.", "#..#..#", ".#...#.", "...#...", "...#..."},
-                    {"..###..", ".#...#.", ".#...#.", ".#####.", ".#.#.#.", ".#...#.", ".#####."}}),
-            new Treatment("C", new String[][] {
-                    {"###..###", "#......#", "...##...", "..####..", "...##...", "#......#", "#......#", "###..###"},
-                    {"...##...", "..#..#..", ".#..#.#.", "#..#...#", "#..#...#", ".#.#..#.", "..####..", "........"},
-                    {".....#.#", "....#..#", "....###.", "...##...", "..##....", ".##.....", "##......", ".#......"},
-                    {"...##...", "...##...", ".#....#.", "#..##..#", "#..##..#", ".#....#.", "...##...", "...##..."},
-                    {"..####..", ".#....#.", ".#....#.", ".######.", ".#....#.", ".#.##.#.", ".#....#.", ".######."}}),
-            new Treatment("B-refined", new String[][] {
-                    {"..#....", "..#....", "..###..", ".##..#.", "#.#..#.", "#....#.", ".####.."},
-                    {"..###..", ".#..##.", "#..#..#", "#..#..#", ".#.#.#.", "..###..", "......."},
-                    {"....#.#", "...#..#", "...###.", "..##...", ".##....", "##.....", ".#....."},
-                    {"...#...", "...#...", ".#...#.", "#..#..#", ".#...#.", "...#...", "...#..."},
-                    {"..###..", ".#...#.", ".#...#.", ".#####.", ".#.#.#.", ".#...#.", ".#####."}}));
+            new Treatment("A", 8, 6), new Treatment("B", 10, 8), new Treatment("C", 12, 10));
 
     @Override public void runTest(ClientGameTestContext context) {
         int scaleBefore = context.computeOnClient(c -> c.options.guiScale().get());
@@ -56,7 +33,7 @@ public final class SidecarExplorationTest implements FabricClientGameTest {
                 });
                 context.setScreen(() -> new Gallery(treatment, light));
                 context.waitTicks(3);
-                var options = TestScreenshotOptions.of("stage-5.2-exploration-" + treatment.name() + "-scale-" + scale + (light ? "-light" : "-dark"))
+                var options = TestScreenshotOptions.of("stage-5.3-exploration-" + treatment.name() + "-scale-" + scale + (light ? "-light" : "-dark"))
                         .disableCounterPrefix().withDestinationDir(Path.of("screenshots").toAbsolutePath())
                         .withSize(scale == 3 ? 1280 : 854, scale == 3 ? 960 : 480);
                 context.takeScreenshot(options);
@@ -67,17 +44,13 @@ public final class SidecarExplorationTest implements FabricClientGameTest {
                 c.options.guiScale().set(scaleBefore); c.resizeGui();
             });
         }
-        org.slf4j.LoggerFactory.getLogger("sidecar-exploration").info("PASS: 24 sidecar exploration screenshots, actual GUI scales 1/2/3");
+        org.slf4j.LoggerFactory.getLogger("sidecar-exploration").info("PASS: 18 sprite exploration screenshots, actual GUI scales 1/2/3");
     }
 
-    private static void glyph(GuiGraphicsExtractor g, String[] rows, int x, int y, float weight, float shadow) {
-        int size = rows.length;
-        for (int dy = 1; dy <= size; dy++) for (int dx = 1; dx <= size; dx++) {
-            if (rows[dy - 1].charAt(dx - 1) == '#' && !(dy < size && dx < size && rows[dy].charAt(dx) == '#'))
-                g.fill(x + dx, y + dy, x + dx + 1, y + dy + 1, Math.round(255 * weight * shadow) << 24 | 0x161714);
-        }
-        for (int dy = 0; dy < size; dy++) for (int dx = 0; dx < size; dx++) if (rows[dy].charAt(dx) == '#')
-            g.fill(x + dx, y + dy, x + dx + 1, y + dy + 1, Math.round(255 * weight) << 24 | 0xf2eedf);
+    private static void sprite(GuiGraphicsExtractor g, Treatment family, String name, int size, int x, int y, float weight) {
+        new dev.buildup.situationalcrosshair.hud.SidecarSprite(net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                BuildupSituationalCrosshairClient.MOD_ID, "textures/gui/sidecar/exploration/" + family.name().toLowerCase(java.util.Locale.ROOT) + "/" + name + ".png"), size)
+                .draw(g, x, y, weight);
     }
 
     private static final class Gallery extends Screen {
@@ -88,18 +61,19 @@ public final class SidecarExplorationTest implements FabricClientGameTest {
             g.fill(0, 0, width, height, light ? 0xffd4d4cc : 0xff344c32);
             int color = light ? 0xff15191d : 0xfff4f4f4;
             g.text(font, "Prototype " + treatment.name() + " | " + treatment.size() + "px | GUI " + minecraft.options.guiScale().get(), 10, 10, color);
-            String[] labels = {"Interact", "Place", "Transform", "Target use", "Trade", "Blocked"};
+            String[] labels = {"Interact", "Place", "Transform", "Target use", "Trade", "Blocked", "Block only", "Attack only", "Axe prototype"};
+            String[] icons = {"interact", "place", "transform", "use", "interact", "place", null, null, "axe"};
             for (int i = 0; i < labels.length; i++) {
-                int x = 10 + i % 3 * (width - 20) / 3, y = 45 + i / 3 * 70;
+                int x = 10 + i % 3 * (width - 20) / 3, y = 42 + i / 3 * 65;
                 g.text(font, labels[i], x, y, color);
-                int bx = x + 25, by = y + 20, size = treatment.size();
+                int bx = x + 30, by = y + 18, size = treatment.size();
                 CrosshairHudRenderer.drawPresentation(g, dev.buildup.situationalcrosshair.presentation.TransitionController.Frame.immediate(
-                        CrosshairPresentation.baseOnly(i == 4 ? ClassicCrosshairType.ATTACK : ClassicCrosshairType.BLOCK)), bx, by);
-                float shadow = treatment.name().equals("B-refined") ? 0.8f : 0.65f;
-                glyph(g, treatment.icons()[i < 4 ? i : i == 4 ? 0 : 1], bx + 17, by + (15 - size) / 2, 0.68f, shadow);
-                if (i == 5) glyph(g, treatment.icons()[4], bx - size - 3, by + (15 - size) / 2, 0.52f, shadow);
+                        CrosshairPresentation.baseOnly(i == 4 || i == 7 ? ClassicCrosshairType.ATTACK : ClassicCrosshairType.BLOCK)), bx, by);
+                if (icons[i] != null) sprite(g, treatment, icons[i], size, bx + 18, by + (15 - size) / 2, 0.70f);
+                if (i == 5) sprite(g, treatment, "blocked", treatment.stateSize(), bx - treatment.stateSize() - 3,
+                        by + (15 - treatment.stateSize()) / 2, 0.52f);
             }
-            g.text(font, "Test only | right action 68%, left state 52%", 10, height - 18, color);
+            g.text(font, "Original sprite family | Axe: test only", 10, height - 18, color);
         }
         @Override public boolean isPauseScreen() { return false; }
     }

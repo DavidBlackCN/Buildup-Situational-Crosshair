@@ -8,32 +8,44 @@ Semantic information may intentionally remain invisible when Minecraft already c
 
 **Small does not automatically mean immersive. A cue must have enough visual structure to read as intentional; visual hierarchy, not microscopic size, is what prevents it from stealing focus.**
 
-Semantic State ≠ Visible Icon remains the policy boundary. Stage 5.2 supersedes
-Stage 5.1's 3px micro-hints, preserving its selective visibility and redundancy
-decisions. Classic is unchanged: original mapper, four PNGs, no sidecars.
+**Immersion is achieved through hierarchy and coherence, not merely by minimizing pixel count.**
+
+**The sidecar is allowed to be a complete visual object. It remains immersive because it is subordinate, selective, stylistically unified with the base, and shown only when it adds meaningful contextual information.**
+
+Semantic State != Visible Icon remains the policy boundary. Stage 5.3 replaces
+Stage 5.2's runtime-filled glyphs with original sprites while preserving its
+left/right composition, selective visibility and redundancy decisions. Classic
+is unchanged: original mapper, four byte-identical PNGs, no sidecars.
 
 ## Selection and visual budget
 
-A bounded exploration compared 6px compact, 7px balanced and 8px expressive
-families on the same six scenes at actual GUI scales 1/2/3, dark and light.
-The selected **7px B-refined** family uses a touch/hand for INTERACT, a cube for
-PLACE, a generic wrench for TRANSFORM and a contact sparkle for targeted USE.
-The hand replaces an initial bracket shape that resembled a second crosshair.
-Only reliable BLOCKED actions qualify for the rarer left lock cue.
+Eighteen real screenshots compare A (8px), B (10px), C (12px) action families,
+with smaller 6/8/10px left locks, on nine identical scenes at actual GUI 1/2/3,
+dark/light. Each also includes an original axe-shaped test prototype. The
+selected **B-refined 10px** action family has a press/hand with cuff, a cube with
+facet and grounding stroke, an open-headed wrench with a hollow handle end,
+and a target-contact droplet. The left lock remains 8px and lighter.
 
 | Element | Layout and weight |
 | --- | --- |
-| Classic base | Original centered 15×15 texture; fully opaque, stationary |
-| Right action | 7×7 design at (17,4), relative to base origin; 68% foreground alpha |
-| Left state | 7×7 design at (-10,4); 52% foreground alpha |
-| Shadow | Bottom/right only, one pixel; 80% of the corresponding foreground alpha |
-| Maximum layout envelope | 35×15 GUI pixels, x [-10,25), y [0,15) |
+| Classic base | Original centered 15x15 canvas; original full-strength inversion, stationary |
+| Right action | 10x10 canvas at (18,2), relative to base origin; 70% RGB/alpha weight |
+| Left state | 8x8 canvas at (-11,3); 52% RGB/alpha weight |
+| Canvas gaps | 3 GUI px at rest, at least 1px during docking |
+| Maximum layout/motion envelope | 39x15 GUI pixels, x [-11,28), y [0,15) |
 
-Each sidecar's 8×8 shadow envelope has a two-pixel gap from the 15px canvas at
-rest. Sparse warm-white strokes and a selective dark shadow carry the silhouette;
-there is no full halo, frame, high-saturation badge or inventory sprite. All
-elements follow normal Minecraft GUI scale without inverse scaling. Most states
-have zero or one sidecar; two sidecars explain one reliable exceptional action.
+The same texture/CROSSHAIR inversion pipeline now draws base and sidecars.
+Classic's opaque source pixels are white; the old warm-white fill plus dark
+shadow used a different material. New sprites use matching white, neutral
+#c8c8c8 secondary and sparse #707070 recessed edges, plus transparency. There
+is no full outline halo. A strength multiplier attenuates RGB as well as alpha:
+alpha alone does not fade INVERT RGB blending. Palette consistency was reviewed
+in actual dark/light screenshots, rather than inferred from the source RGBs.
+
+Natural GUI scaling, integer anchors, explicit nearest-neighbor metadata and
+thin outlines preserve clarity. Most states have zero or one sidecar; rare
+reliable blocked actions have two. Larger artwork is subordinate through
+contrast, negative space, limited frequency and fixed role separation.
 
 ## Production policy
 
@@ -70,10 +82,10 @@ chest interaction over a held crossbow still shows BLOCK + right INTERACT.
 ## Motion
 
 OFF is immediate at the selected visual weights. SUBTLE independently docks the
-current sides over **100ms**, using cubic ease-out: foreground appearance rises
+current sides over **100ms**, using cubic ease-out: inversion strength rises
 from 45% to full selected weight, while each side moves outward by at most **2
 integer GUI pixels**. The base never moves, fades or scales. Final anchors are
-unchanged by animation; the motion envelope remains within 35×15.
+unchanged by animation; the motion envelope remains within 39×15.
 
 Meaning updates immediately. Old sidecars disappear immediately, without trails
 or exit animation. Removing a left state does not replay an unchanged right
@@ -93,8 +105,9 @@ Resolved semantic state
 
 The renderer queries no target, held item, block state, evidence or rule. Semantic
 and rule source/schema are unchanged; the semantic layer imports no presentation
-classes. Five original code-defined glyphs are cached, with no runtime texture
-generation. Historical Classic assets and license attribution remain unchanged.
+classes. Five original sprite identifiers/dimensions are cached; Minecraft loads
+resources normally. There is no runtime rasterization or texture generation.
+Historical Classic assets and license attribution remain unchanged.
 The original HUD layer and named-sprite suppression still delegate visibility
 and attack indicators to Vanilla.
 
@@ -111,21 +124,30 @@ Defaults remain Classic+ / SUBTLE. Choices last for this client launch across
 world changes. Feedback supports English/Chinese. No server installation or
 permission is required. Persistent configuration belongs to Stage 7.
 
+## Tool-like prototypes and future hint boundary
+
+Original axe variants exist in all three test families, excluded from the mod
+jar. Production deliberately keeps generic TRANSFORM: effective candidates do
+not carry a typed tool-category presentation hint. Inferring from held ItemStack
+or fragile origin strings would weaken the renderer/presentation boundary.
+A future evidence/provider-to-presentation hint can select dedicated tool sprites
+without changing ActionKind or making the renderer query the world. No hint
+framework or tool-class semantic enum is implemented in Stage 5.3.
+
 ## Visual evidence
 
-- [Test-only A/B/C and refinement comparison index](validation/stage-5.2-exploration/README.md)
-- GUI 1: [dark](validation/stage-5.2-gallery-scale-1-dark.png), [light](validation/stage-5.2-gallery-scale-1-light.png)
-- GUI 2: [dark](validation/stage-5.2-gallery-scale-2-dark.png), [light](validation/stage-5.2-gallery-scale-2-light.png)
-- GUI 3: [dark](validation/stage-5.2-gallery-scale-3-dark.png), [light](validation/stage-5.2-gallery-scale-3-light.png)
-- Production docking samples: [dark](validation/stage-5.2-docking-scale-2-dark.png), [light](validation/stage-5.2-docking-scale-2-light.png)
+- [A/B/C exploration index](validation/stage-5.3-exploration/README.md)
+- GUI 1: [dark](validation/stage-5.3-gallery-scale-1-dark.png), [light](validation/stage-5.3-gallery-scale-1-light.png)
+- GUI 2: [dark](validation/stage-5.3-gallery-scale-2-dark.png), [light](validation/stage-5.3-gallery-scale-2-light.png)
+- GUI 3: [dark](validation/stage-5.3-gallery-scale-3-dark.png), [light](validation/stage-5.3-gallery-scale-3-light.png)
+- Docking: [dark](validation/stage-5.3-docking-scale-2-dark.png), [light](validation/stage-5.3-docking-scale-2-light.png)
+- Gameplay: [block](validation/stage-5.3-gameplay-normal-block.png), [chest](validation/stage-5.3-gameplay-chest.png), [log transform](validation/stage-5.3-gameplay-transform-log.png), [villager](validation/stage-5.3-gameplay-villager.png)
 
-Sixteen production-policy scenes, left-to-right/top-to-bottom: Air, Block,
-Bad tool, Entity, Chest, Place, Convert (generic TRANSFORM), Crop use, Trade,
-Bow draw, Xbow rdy, Atk CD, Blocked placement, Invalid secondary, Special,
-Locked UI. Only the two BLOCKED scenes have both sides. Other quiet states
-deliberately remain base-only. Labels and backgrounds belong only to test screens.
-
-The galleries use synthetic semantic scenes through the production policy and
-renderer; real chest, blocked placement, bow and crossbow capture is separately
-tested. Static review and deterministic motion samples do not establish long-play
-comfort on every scenery/resource pack. See the [Stage 5.2 report](stage-5.2-report.md).
+Sixteen gallery scenes, left-to-right/top-to-bottom: Air, Block, Bad tool,
+Entity, Chest, Place, Convert, Crop use, Trade, Bow draw, Xbow rdy, Atk CD,
+Blocked placement, Invalid secondary, Special, Locked UI. Only the two blocked
+scenes have both sides. Quiet states deliberately stay base-only. Gallery labels
+and backgrounds are test-only. Gameplay evidence uses server-backed scenery,
+actual camera raycasts and the normal production HUD, without a synthetic Screen
+or manually assigned hitResult. See the [Stage 5.3 report](stage-5.3-report.md)
+for review findings and remaining human long-play checks.

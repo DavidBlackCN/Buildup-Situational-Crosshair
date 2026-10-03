@@ -5,6 +5,8 @@ import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairResolver;
 import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairType;
 import dev.buildup.situationalcrosshair.hud.CrosshairHudRenderer;
 import dev.buildup.situationalcrosshair.hud.CrosshairDecorationRenderer;
+import dev.buildup.situationalcrosshair.hud.SidecarSprite;
+import dev.buildup.situationalcrosshair.hud.SidecarSprites;
 import dev.buildup.situationalcrosshair.presentation.*;
 import dev.buildup.situationalcrosshair.semantic.*;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -81,11 +83,11 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                             CrosshairHudRenderer.drawPresentation(graphics, frame, 20, 30);
                             check(graphics.custom == 1 && graphics.vanilla == 0 && graphics.baseX == 20 && graphics.baseY == 30,
                                     "stable original base coordinates " + base + "/" + action);
-                            var expected = expectedPixels(PixelGlyph.action(action), 20 + CrosshairDecorationRenderer.RIGHT_X + frame.rightOffset(), 34);
-                            expected.addAll(expectedPixels(PixelGlyph.state(state), 20 + CrosshairDecorationRenderer.LEFT_X + frame.leftOffset(), 34));
+                            var expected = expectedPixels(SidecarSprites.action(action), 20 + CrosshairDecorationRenderer.RIGHT_X + frame.rightOffset(), 32);
+                            expected.addAll(expectedPixels(SidecarSprites.state(state), 20 + CrosshairDecorationRenderer.LEFT_X + frame.leftOffset(), 33));
                             check(graphics.foregroundPixels.equals(expected), "exact fixed-role anchor and bounded docking");
                             if (action != CrosshairPresentation.ActionSidecar.NONE)
-                                check(graphics.foregroundAlpha == Math.round(255 * frame.rightOpacity() * 0.68f), "subordinate right alpha preserved");
+                                check(graphics.foregroundAlpha == Math.round(255 * frame.rightOpacity() * 0.70f), "subordinate right alpha preserved");
                             if (state != CrosshairPresentation.StateSidecar.NONE)
                                 check(graphics.leftAlpha == Math.round(255 * frame.leftOpacity() * 0.52f), "rarer left alpha preserved");
                         }
@@ -158,7 +160,7 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                     // Fabric's isolated game directory is temporary. Save under
                     // the Gradle run working directory so evidence survives exit.
                     var options = net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-                            .of("stage-5.2-gallery-scale-" + scale + (light ? "-light" : "-dark"))
+                            .of("stage-5.3-gallery-scale-" + scale + (light ? "-light" : "-dark"))
                             .disableCounterPrefix().withDestinationDir(java.nio.file.Path.of("screenshots").toAbsolutePath());
                     if (scale == 3) options.withSize(1280, 960);
                     context.takeScreenshot(options);
@@ -166,7 +168,7 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                         context.setScreen(() -> new DockingGallery(light));
                         context.waitTicks(3);
                         context.takeScreenshot(net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-                                .of("stage-5.2-docking-scale-2" + (light ? "-light" : "-dark"))
+                                .of("stage-5.3-docking-scale-2" + (light ? "-light" : "-dark"))
                                 .disableCounterPrefix().withDestinationDir(java.nio.file.Path.of("screenshots").toAbsolutePath()));
                     }
                 }
@@ -177,7 +179,7 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                     c.options.guiScale().set(originalScale); c.resizeGui();
                 });
             }
-            org.slf4j.LoggerFactory.getLogger("classic-plus-test").info("PASS: {} Classic+ HUD/command/pixel checks", checks);
+            org.slf4j.LoggerFactory.getLogger("classic-plus-test").info("PASS: {} Classic+ HUD/command/sprite checks", checks);
         }
     }
     private static void command(Minecraft c, String command) {
@@ -188,11 +190,14 @@ public final class ClassicPlusTest implements FabricClientGameTest {
     private static RecordingGraphics record(Minecraft c) {
         var graphics = new RecordingGraphics(c); c.gui.hud.extractRenderState(graphics, DeltaTracker.ONE); return graphics;
     }
-    private static Set<String> expectedPixels(PixelGlyph glyph, int x, int y) {
+    private static Set<String> expectedPixels(SidecarSprite sprite, int x, int y) {
         var pixels = new HashSet<String>();
-        if (glyph == null) return pixels;
-        for (int row = 0; row < PixelGlyph.SIZE; row++) for (int col = 0; col < PixelGlyph.SIZE; col++)
-            if (glyph.at(col, row)) pixels.add((x + col) + ":" + (y + row));
+        if (sprite == null) return pixels;
+        try (var stream = RecordingGraphics.cResource(sprite.texture())) {
+            var image = javax.imageio.ImageIO.read(stream);
+            for (int row = 0; row < image.getHeight(); row++) for (int col = 0; col < image.getWidth(); col++)
+                if ((image.getRGB(col, row) >>> 24) != 0) pixels.add((x + col) + ":" + (y + row));
+        } catch (java.io.IOException e) { throw new AssertionError("Sprite asset missing", e); }
         return pixels;
     }
     private static void check(boolean value, String label) { if (!value) throw new AssertionError(label); checks++; }
@@ -222,21 +227,37 @@ public final class ClassicPlusTest implements FabricClientGameTest {
             if (sprite.equals(Identifier.withDefaultNamespace("hud/crosshair"))) vanilla++;
             if (sprite.getPath().contains("attack_indicator")) attackIndicator++;
         }
-        @Override public void fill(int x1, int y1, int x2, int y2, int color) {
-            if ((color & 0xffffff) == 0xf2eedf || (color & 0xffffff) == 0x161714) {
-                int dx = x1 - baseX, dy = y1 - baseY;
-                if (x2 != x1 + 1 || y2 != y1 + 1) throw new AssertionError("micro pixels changed size");
-                if (dx < -10 || dx >= 25 || dy < 0 || dy >= 15) throw new AssertionError("sidecar escaped 35x15 envelope");
-                if (dx >= 0 && dx < 15 && (baseMask.getRGB(dx, dy) >>> 24) != 0)
-                    throw new AssertionError("sidecar collided with actual Classic opaque mask");
-                if (!allDetailPixels.add(x1 + ":" + y1)) throw new AssertionError("overlapping detail submissions change fade alpha");
+        @Override public void blit(RenderPipeline pipeline, Identifier texture, int x, int y, float u, float v,
+                int width, int height, int textureWidth, int textureHeight, int color) {
+            if (!texture.getNamespace().equals(BuildupSituationalCrosshairClient.MOD_ID) || !texture.getPath().startsWith("textures/gui/sidecar/")) return;
+            boolean left = x < baseX;
+            check(pipeline == net.minecraft.client.renderer.RenderPipelines.CROSSHAIR, "same inverse material as Classic");
+            check(width == (left ? 8 : 10) && height == width && textureWidth == width && textureHeight == height,
+                    "selected sprite canvas without scaling");
+            check(u == 0 && v == 0, "whole sprite, no atlas cropping");
+            int alpha = color >>> 24;
+            check((color & 0xffffff) == (alpha << 16 | alpha << 8 | alpha), "RGB as well as alpha attenuates INVERT");
+            var sprite = new SidecarSprite(texture, width);
+            var pixels = expectedPixels(sprite, x, y);
+            check(!pixels.isEmpty(), "actual sprite exists and has visible art");
+            for (String pixel : pixels) {
+                String[] coordinates = pixel.split(":");
+                int dx = Integer.parseInt(coordinates[0]) - baseX, dy = Integer.parseInt(coordinates[1]) - baseY;
+                if (dx < -11 || dx >= 28 || dy < 0 || dy >= 15) throw new AssertionError("sprite escaped 39x15 envelope");
+                if (dx >= 0 && dx < 15) throw new AssertionError("sprite overlaps base canvas");
+                if (!allDetailPixels.add(pixel)) throw new AssertionError("overlapping sprite submissions");
             }
-            if ((color & 0xffffff) == 0xf2eedf) {
-                foreground++;
-                if (x1 < baseX) leftAlpha = color >>> 24; else foregroundAlpha = color >>> 24;
-                foregroundPixels.add(x1 + ":" + y1);
-                if (x2 != x1 + 1 || y2 != y1 + 1) throw new AssertionError("detail pixels changed size");
-            }
+            try (var input = cResource(texture)) {
+                var image = javax.imageio.ImageIO.read(input);
+                check(image.getWidth() == width && image.getHeight() == height, "actual PNG dimensions match metadata");
+            } catch (java.io.IOException e) { throw new AssertionError(e); }
+            try (var input = cResource(Identifier.fromNamespaceAndPath(texture.getNamespace(), texture.getPath() + ".mcmeta"))) {
+                String metadata = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                check(metadata.contains("\"blur\":false"), "explicit nearest-neighbor asset metadata");
+            } catch (java.io.IOException e) { throw new AssertionError(e); }
+            foreground++;
+            if (left) leftAlpha = alpha; else foregroundAlpha = alpha;
+            foregroundPixels.addAll(pixels);
         }
     }
 
