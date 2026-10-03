@@ -3,7 +3,8 @@ package dev.buildup.situationalcrosshair.presentation;
 import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairType;
 import dev.buildup.situationalcrosshair.crosshair.ClassicPresentation;
 import dev.buildup.situationalcrosshair.semantic.*;
-import static dev.buildup.situationalcrosshair.presentation.CrosshairPresentation.SecondaryModifier;
+import static dev.buildup.situationalcrosshair.presentation.CrosshairPresentation.ActionSidecar;
+import static dev.buildup.situationalcrosshair.presentation.CrosshairPresentation.StateSidecar;
 
 /** Presentation policy sees resolved actions, never re-ranks the candidate pool. */
 public final class PresentationResolver {
@@ -14,7 +15,7 @@ public final class PresentationResolver {
         if (theme == CrosshairTheme.CLASSIC) {
             var base = ClassicPresentation.map(state);
             return base == null ? CrosshairPresentation.unavailable(Visibility.VANILLA)
-                    : new CrosshairPresentation(Visibility.SHOW, base, SecondaryModifier.NONE);
+                    : CrosshairPresentation.baseOnly(base);
         }
         var primary = state.primary();
         var secondary = state.secondary();
@@ -28,19 +29,24 @@ public final class PresentationResolver {
         };
         // Only the effective native crossbow's provenance qualifies. An unrelated
         // charged offhand or a pack rule's generic READY must not become ATTACK.
-        if (loadedCrossbowReady(state))
-            return new CrosshairPresentation(Visibility.SHOW, ClassicCrosshairType.ATTACK, SecondaryModifier.NONE);
-        // Vanilla already communicates charging/cooldown. Unavailable secondary
-        // actions remain semantic facts, rather than misleading usable hints.
-        var modifier = secondary.state() != ActionState.NORMAL ? SecondaryModifier.NONE : switch (secondary.action()) {
-            case INTERACT -> SecondaryModifier.INTERACT;
-            case USE -> state.target() != TargetType.MISS && !selfUse(secondary)
-                    ? SecondaryModifier.USE : SecondaryModifier.NONE;
-            case PLACE -> SecondaryModifier.PLACE;
-            case TRANSFORM -> SecondaryModifier.TRANSFORM;
-            default -> SecondaryModifier.NONE;
+        if (loadedCrossbowReady(state)) return CrosshairPresentation.baseOnly(ClassicCrosshairType.ATTACK);
+        // Air, uncertain primary meaning and invalid mining keep a clean Classic
+        // base. This also prevents a full sidecar overwhelming the single DOT.
+        if (base == ClassicCrosshairType.DOT || base == ClassicCrosshairType.ERROR)
+            return CrosshairPresentation.baseOnly(base);
+        boolean blocked = secondary.state() == ActionState.BLOCKED
+                && secondary.evidence().map(e -> e.confidence() == Confidence.AUTHORITATIVE
+                    || e.confidence() == Confidence.EXACT || e.confidence() == Confidence.STRONG).orElse(false);
+        if (secondary.state() != ActionState.NORMAL && !blocked) return CrosshairPresentation.baseOnly(base);
+        var right = switch (secondary.action()) {
+            case INTERACT -> ActionSidecar.INTERACT;
+            case USE -> state.target() != TargetType.MISS && !selfUse(secondary) ? ActionSidecar.USE : ActionSidecar.NONE;
+            case PLACE -> ActionSidecar.PLACE;
+            case TRANSFORM -> ActionSidecar.TRANSFORM;
+            default -> ActionSidecar.NONE;
         };
-        return new CrosshairPresentation(Visibility.SHOW, base, modifier);
+        var left = blocked && right != ActionSidecar.NONE ? StateSidecar.BLOCKED : StateSidecar.NONE;
+        return new CrosshairPresentation(Visibility.SHOW, base, left, right);
     }
 
     private static boolean loadedCrossbowReady(CrosshairSemanticState state) {

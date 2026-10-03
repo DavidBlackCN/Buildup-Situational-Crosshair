@@ -40,7 +40,7 @@ public final class CrosshairHudRenderer {
                     var frame = TRANSITION.update(pending, animation.get(), System.nanoTime());
                     int x = (graphics.guiWidth() - 15) / 2;
                     int y = (graphics.guiHeight() - 15) / 2;
-                    drawPresentation(graphics, frame.presentation(), x, y, frame.detailOpacity());
+                    drawPresentation(graphics, frame, x, y);
                 } else {
                     TRANSITION.reset();
                 }
@@ -53,11 +53,12 @@ public final class CrosshairHudRenderer {
 
     /** Shared drawing path for one resolved frame; coordinates are GUI pixels. */
     public static void drawPresentation(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
-            CrosshairPresentation presentation, int x, int y, float detailOpacity) {
+            TransitionController.Frame frame, int x, int y) {
+        var presentation = frame.presentation();
         if (!presentation.customVisible()) return;
         graphics.blit(RenderPipelines.CROSSHAIR, TEXTURES.get(presentation.base()), x, y,
                 0, 0, 15, 15, 15, 15);
-        CrosshairDecorationRenderer.draw(graphics, presentation, x, y, detailOpacity);
+        CrosshairDecorationRenderer.draw(graphics, frame, x, y);
     }
 
     /** Called at the exact vanilla sprite draw; no target detection in the mixin. */

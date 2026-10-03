@@ -1,5 +1,8 @@
 # Stage 5.1 — Classic+ Visual Density & Immersive Presentation Correction
 
+> Historical Stage 5.1 validation record. Its micro-hint design is superseded
+> by [Stage 5.2](stage-5.2-report.md); semantic and redundancy decisions remain.
+
 ## Result: PASS
 
 Version **0.1.0-alpha.5.1+mc26.3**. This corrective stage supersedes Stage 5's

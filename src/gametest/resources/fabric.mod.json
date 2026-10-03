@@ -5,6 +5,6 @@
   "name": "Classic Parity Tests",
   "environment": "client",
   "entrypoints": {
-    "fabric-client-gametest": ["dev.buildup.situationalcrosshair.ClassicParityTest", "dev.buildup.situationalcrosshair.VanillaCapabilitiesTest", "dev.buildup.situationalcrosshair.RuleReloadTest", "dev.buildup.situationalcrosshair.ClassicPlusTest"]
+    "fabric-client-gametest": ["dev.buildup.situationalcrosshair.ClassicParityTest", "dev.buildup.situationalcrosshair.VanillaCapabilitiesTest", "dev.buildup.situationalcrosshair.RuleReloadTest", "dev.buildup.situationalcrosshair.ClassicPlusTest", "dev.buildup.situationalcrosshair.SidecarExplorationTest"]
   }
 }

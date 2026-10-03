@@ -4,11 +4,101 @@ Buildup Situational Crosshair is an immersive contextual hint system, not a dens
 
 Semantic information may intentionally remain invisible when Minecraft already communicates it adequately or when its visual value does not justify occupying the center of the screen.
 
-**Semantic State ≠ Visible Icon.** Stage 5.1 replaces the Stage 5 status cluster.
-Classic+ is the default. Classic preserves the historical four-glyph policy,
-charged-crossbow appearance and hand precedence, with no decorations.
+**Classic+ uses sidecars as immersive contextual cues. The base crosshair remains the visual anchor; sidecars are expressive enough to be intentional designs, but visually subordinate enough to preserve Vanilla immersion.**
 
-Client-only commands, available while in a world:
+**Small does not automatically mean immersive. A cue must have enough visual structure to read as intentional; visual hierarchy, not microscopic size, is what prevents it from stealing focus.**
+
+Semantic State ≠ Visible Icon remains the policy boundary. Stage 5.2 supersedes
+Stage 5.1's 3px micro-hints, preserving its selective visibility and redundancy
+decisions. Classic is unchanged: original mapper, four PNGs, no sidecars.
+
+## Selection and visual budget
+
+A bounded exploration compared 6px compact, 7px balanced and 8px expressive
+families on the same six scenes at actual GUI scales 1/2/3, dark and light.
+The selected **7px B-refined** family uses a touch/hand for INTERACT, a cube for
+PLACE, a generic wrench for TRANSFORM and a contact sparkle for targeted USE.
+The hand replaces an initial bracket shape that resembled a second crosshair.
+Only reliable BLOCKED actions qualify for the rarer left lock cue.
+
+| Element | Layout and weight |
+| --- | --- |
+| Classic base | Original centered 15×15 texture; fully opaque, stationary |
+| Right action | 7×7 design at (17,4), relative to base origin; 68% foreground alpha |
+| Left state | 7×7 design at (-10,4); 52% foreground alpha |
+| Shadow | Bottom/right only, one pixel; 80% of the corresponding foreground alpha |
+| Maximum layout envelope | 35×15 GUI pixels, x [-10,25), y [0,15) |
+
+Each sidecar's 8×8 shadow envelope has a two-pixel gap from the 15px canvas at
+rest. Sparse warm-white strokes and a selective dark shadow carry the silhouette;
+there is no full halo, frame, high-saturation badge or inventory sprite. All
+elements follow normal Minecraft GUI scale without inverse scaling. Most states
+have zero or one sidecar; two sidecars explain one reliable exceptional action.
+
+## Production policy
+
+| Resolved semantic fact | Classic+ presentation |
+| --- | --- |
+| Air / MISS | DOT only |
+| Normal MINE | BLOCK, with eligible secondary action on the right |
+| MINE / INVALID | ERROR only, no redundant invalid cue or secondary sidecars |
+| Entity ATTACK, including COOLDOWN | ATTACK, with eligible secondary action; Vanilla attack indicator retained |
+| INTERACT / PLACE / TRANSFORM, NORMAL | Right action sidecar on a recognized BLOCK/ATTACK base |
+| Targeted USE / NORMAL | Right contact cue under the same conservative gate |
+| Reliable BLOCKED target action | Left lock + base + right action; no blocked variant or extra symbol |
+| CHARGING / secondary COOLDOWN / secondary INVALID | Base only |
+| Effective native loaded crossbow USE / READY | ATTACK-style base only; semantic result remains SECONDARY USE/READY |
+| Other READY | Base only |
+| SPECIAL | Base only |
+
+BLOCKED requires existing effective evidence with AUTHORITATIVE, EXACT or STRONG
+confidence, a recognized base and an eligible action. It does not inspect or
+re-rank the candidate pool. Unknown/inferred blocked actions remain visually
+silent. A left state can never appear without a qualifying right action.
+
+USE on MISS and known native consumable, shield/blocking-item, spyglass and ranged
+self-use remain suppressed. Other targeted NORMAL/BLOCKED USE on BLOCK/ENTITY is
+eligible. This is a conservative target gate, not perfect classification of every
+modded item. Pack rules keep their semantics. Uncertain primary results mapped
+to DOT have no sidecars, so a full icon cannot overpower the single dot.
+
+Loaded-crossbow appearance still requires the resolved native crossbow/main or
+crossbow/off origin and that same hand's charged-crossbow fact. A READY bow,
+unrelated charged hand or generic pack READY cannot trigger it. An effective
+chest interaction over a held crossbow still shows BLOCK + right INTERACT.
+
+## Motion
+
+OFF is immediate at the selected visual weights. SUBTLE independently docks the
+current sides over **100ms**, using cubic ease-out: foreground appearance rises
+from 45% to full selected weight, while each side moves outward by at most **2
+integer GUI pixels**. The base never moves, fades or scales. Final anchors are
+unchanged by animation; the motion envelope remains within 35×15.
+
+Meaning updates immediately. Old sidecars disappear immediately, without trails
+or exit animation. Removing a left state does not replay an unchanged right
+action. Base-only changes also leave an unchanged action stable. Hidden/Vanilla
+fallback resets history. There are no pulses, loops, bounces, rotations, repeated
+state jolts or extra animation modes.
+
+## Architecture and commands
+
+```text
+Resolved semantic state
+  → PresentationResolver (selective policy)
+  → CrosshairPresentation (visibility, base, typed left state, typed right action)
+  → TransitionController.Frame (per-side opacity and integer offset)
+  → CrosshairHudRenderer / CrosshairDecorationRenderer
+```
+
+The renderer queries no target, held item, block state, evidence or rule. Semantic
+and rule source/schema are unchanged; the semantic layer imports no presentation
+classes. Five original code-defined glyphs are cached, with no runtime texture
+generation. Historical Classic assets and license attribution remain unchanged.
+The original HUD layer and named-sprite suppression still delegate visibility
+and attack indicators to Vanilla.
+
+Client commands, in a world:
 
 ```text
 /crosshair theme classic
@@ -17,98 +107,25 @@ Client-only commands, available while in a world:
 /crosshair animation subtle
 ```
 
-Choices apply for this client session, across world changes, and reset at the next
-launch. Defaults are Classic+ and SUBTLE. No server installation or command
-permission is needed. Feedback supports English and Simplified Chinese.
-Persistent configuration and a settings GUI belong to Stage 7.
-
-## Visual language
-
-The original 15×15 texture and centered position are unchanged. Classic+ adds at
-most one **3×3 foreground** micro hint, with a one-pixel bottom/right drop shadow
-only. Its complete **4×4 envelope starts at (11,11)** inside the old canvas.
-The maximum footprint is **15×15 GUI pixels**. There is no full halo, independent
-status icon, third symbol, gameplay text, timer or progress ring. Base and hint
-follow ordinary Minecraft GUI scale, without inverse scaling.
-
-| Effective secondary | Default presentation |
-| --- | --- |
-| INTERACT / NORMAL | Tiny open speech mark |
-| PLACE / NORMAL | Tiny hollow block |
-| TRANSFORM / NORMAL | Opposed corner strokes |
-| USE / NORMAL on BLOCK or ENTITY | Tiny drop, unless recognized as item-global self-use |
-| USE on MISS | Hidden |
-| SPECIAL | Hidden |
-| Non-NORMAL secondary | Hidden, except effective loaded-crossbow READY below |
-
-Known native consumable, blocking-item/shield, spyglass and ranged self-use origins
-are suppressed even when the ray happens to hit a target. Other NORMAL USE on
-BLOCK/ENTITY may show a drop. This is a conservative target gate, not a new
-classifier of every modded item's behavior. Pack rules retain their resolved
-meaning. Presentation never re-ranks candidates or guesses unknown behavior.
-
-| Semantic fact | Classic+ appearance |
-| --- | --- |
-| MISS | DOT |
-| MINE / NORMAL | BLOCK |
-| MINE / INVALID | ERROR, without another X |
-| Entity ATTACK / NORMAL or COOLDOWN | ATTACK; Vanilla attack indicator retained |
-| USE / CHARGING, including bow into air | Target base only; no charging or USE symbol |
-| Effective native loaded crossbow USE / READY | ATTACK-style base only |
-| Other READY, secondary BLOCKED / INVALID / COOLDOWN | Target base only; unavailable action hint hidden |
-
-The ranged alias requires the resolved secondary's existing native crossbow/main
-or crossbow/off provenance and that same hand's charged-crossbow fact. A READY
-bow, unrelated charged hand or generic pack READY does not qualify. The semantic
-result remains **SECONDARY USE / READY**, never ATTACK. An effective chest
-interaction still shows BLOCK + INTERACT even when holding a loaded crossbow.
-
-Actual PNG alpha masks are tested for every base/modifier combination: no hint
-pixel covers any opaque DOT/BLOCK/ATTACK/ERROR pixel. The main glyph is always
-opaque and stationary. Vanilla continues to determine whether its central crosshair
-would be submitted. F1, third person, debug crosshair and missing-context fallback
-cannot leave decoration ghosts. Vanilla attack indicators keep their existing path.
-
-## Transitions
-
-OFF submits the current presentation immediately. SUBTLE fades new details from
-35% to full opacity over 100 ms using elapsed monotonic time and smooth easing.
-The base changes immediately at full opacity. Only the current action's glyphs
-exist; old actions are removed immediately. There are no trails, loops or delayed
-hidden/fallback states. Switching OFF during a transition snaps to full opacity.
-
-## Boundary
-
-```text
-Resolved Semantic State
-  → PresentationResolver (theme)
-  → CrosshairPresentation
-  → TransitionController
-  → CrosshairHudRenderer / CrosshairDecorationRenderer
-```
-
-The pure presentation model carries visibility, a base and one optional modifier;
-the renderer receives no primary/secondary status channels. Texture paths and Minecraft drawing APIs belong only to the
-renderer. Semantic classes have no presentation imports or texture knowledge.
-`PixelGlyph` contains four original micro patterns, cached once. Classic
-PNG assets are byte-for-byte unchanged. No new bitmap artwork is generated.
+Defaults remain Classic+ / SUBTLE. Choices last for this client launch across
+world changes. Feedback supports English/Chinese. No server installation or
+permission is required. Persistent configuration belongs to Stage 7.
 
 ## Visual evidence
 
-Real Minecraft screenshots generated by the production drawing path:
+- [Test-only A/B/C and refinement comparison index](validation/stage-5.2-exploration/README.md)
+- GUI 1: [dark](validation/stage-5.2-gallery-scale-1-dark.png), [light](validation/stage-5.2-gallery-scale-1-light.png)
+- GUI 2: [dark](validation/stage-5.2-gallery-scale-2-dark.png), [light](validation/stage-5.2-gallery-scale-2-light.png)
+- GUI 3: [dark](validation/stage-5.2-gallery-scale-3-dark.png), [light](validation/stage-5.2-gallery-scale-3-light.png)
+- Production docking samples: [dark](validation/stage-5.2-docking-scale-2-dark.png), [light](validation/stage-5.2-docking-scale-2-light.png)
 
-- GUI scale 1: [dark](validation/stage-5.1-gallery-scale-1-dark.png), [light](validation/stage-5.1-gallery-scale-1-light.png)
-- GUI scale 2: [dark](validation/stage-5.1-gallery-scale-2-dark.png), [light](validation/stage-5.1-gallery-scale-2-light.png)
-- GUI scale 3: [dark](validation/stage-5.1-gallery-scale-3-dark.png), [light](validation/stage-5.1-gallery-scale-3-light.png)
+Sixteen production-policy scenes, left-to-right/top-to-bottom: Air, Block,
+Bad tool, Entity, Chest, Place, Convert (generic TRANSFORM), Crop use, Trade,
+Bow draw, Xbow rdy, Atk CD, Blocked placement, Invalid secondary, Special,
+Locked UI. Only the two BLOCKED scenes have both sides. Other quiet states
+deliberately remain base-only. Labels and backgrounds belong only to test screens.
 
-Scenes, left-to-right/top-to-bottom: Air (DOT), Block, Bad tool (ERROR), Entity
-(ATTACK), Chest (BLOCK + INTERACT), Place (BLOCK + PLACE), Convert (BLOCK +
-TRANSFORM), Crop use (BLOCK + USE), Trade (ATTACK + INTERACT), Bow draw (DOT only),
-Xbow rdy (ATTACK only), Atk CD (ATTACK only), Blocked (BLOCK only), Invalid
-secondary (BLOCK only), Special (BLOCK only).
-
-Labels/backgrounds belong only to the test Screen, not the gameplay HUD. These
-synthetic semantic scenes use the production policy and renderer. Real native
-capture is separately tested for chest, bow and crossbow. Static screenshots do
-not prove natural-play animation comfort or all scenery/modpack combinations.
-See the [Stage 5.1 report](stage-5.1-report.md) for visual review and validation.
+The galleries use synthetic semantic scenes through the production policy and
+renderer; real chest, blocked placement, bow and crossbow capture is separately
+tested. Static review and deterministic motion samples do not establish long-play
+comfort on every scenery/resource pack. See the [Stage 5.2 report](stage-5.2-report.md).

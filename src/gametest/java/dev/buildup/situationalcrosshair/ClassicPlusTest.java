@@ -50,7 +50,7 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                 c.player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.COBBLESTONE));
                 c.player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
                 var mapped = PresentationResolver.resolve(ClassicCrosshairResolver.semanticState(c), PresentationOptions.theme());
-                check(mapped.base() == ClassicCrosshairType.BLOCK && mapped.modifier() == CrosshairPresentation.SecondaryModifier.INTERACT,
+                check(mapped.base() == ClassicCrosshairType.BLOCK && mapped.rightSidecar() == CrosshairPresentation.ActionSidecar.INTERACT,
                         "real chest shows BLOCK + INTERACT");
                 var hud = record(c);
                 check(hud.custom == 1 && hud.vanilla == 0 && hud.foreground > 0, "one custom base plus details, no vanilla duplication");
@@ -70,15 +70,49 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                 command(c, "crosshair theme classic_plus");
                 command(c, "crosshair animation subtle");
                 check(PresentationOptions.animation() == TransitionMode.SUBTLE, "SUBTLE selectable through client command");
-                for (var base : ClassicCrosshairType.values()) for (var action : CrosshairPresentation.SecondaryModifier.values()) {
-                    var p = new CrosshairPresentation(Visibility.SHOW, base, action);
-                    var graphics = new RecordingGraphics(c);
-                    CrosshairHudRenderer.drawPresentation(graphics, p, 20, 30, 0.5f);
-                    check(graphics.custom == 1 && graphics.vanilla == 0, "one stable base for " + base + "/" + action);
-                    var glyph = PixelGlyph.modifier(action);
-                    check(graphics.foregroundPixels.equals(expectedPixels(glyph, 20 + CrosshairDecorationRenderer.ACTION_X,
-                            30 + CrosshairDecorationRenderer.ACTION_Y)), "exact micro foreground " + base + "/" + action);
-                    if (glyph != null) check(graphics.foregroundAlpha == 128, "micro fade alpha survives extraction");
+                for (var base : ClassicCrosshairType.values()) for (var action : CrosshairPresentation.ActionSidecar.values()) {
+                    for (var state : CrosshairPresentation.StateSidecar.values()) {
+                        if (state != CrosshairPresentation.StateSidecar.NONE && action == CrosshairPresentation.ActionSidecar.NONE) continue;
+                        var p = new CrosshairPresentation(Visibility.SHOW, base, state, action);
+                        var transition = new TransitionController();
+                        for (long elapsed : List.of(0L, 25_000_000L, 50_000_000L, 100_000_000L)) {
+                            var frame = transition.update(p, TransitionMode.SUBTLE, elapsed);
+                            var graphics = new RecordingGraphics(c);
+                            CrosshairHudRenderer.drawPresentation(graphics, frame, 20, 30);
+                            check(graphics.custom == 1 && graphics.vanilla == 0 && graphics.baseX == 20 && graphics.baseY == 30,
+                                    "stable original base coordinates " + base + "/" + action);
+                            var expected = expectedPixels(PixelGlyph.action(action), 20 + CrosshairDecorationRenderer.RIGHT_X + frame.rightOffset(), 34);
+                            expected.addAll(expectedPixels(PixelGlyph.state(state), 20 + CrosshairDecorationRenderer.LEFT_X + frame.leftOffset(), 34));
+                            check(graphics.foregroundPixels.equals(expected), "exact fixed-role anchor and bounded docking");
+                            if (action != CrosshairPresentation.ActionSidecar.NONE)
+                                check(graphics.foregroundAlpha == Math.round(255 * frame.rightOpacity() * 0.68f), "subordinate right alpha preserved");
+                            if (state != CrosshairPresentation.StateSidecar.NONE)
+                                check(graphics.leftAlpha == Math.round(255 * frame.leftOpacity() * 0.52f), "rarer left alpha preserved");
+                        }
+                    }
+                }
+                var attackIndicator = c.options.attackIndicator().get();
+                c.options.attackIndicator().set(net.minecraft.client.AttackIndicatorStatus.CROSSHAIR);
+                c.player.resetAttackStrengthTicker();
+                var attackHud = record(c);
+                check(attackHud.attackIndicator > 0 && attackHud.custom == 1 && attackHud.vanilla == 0,
+                        "real Vanilla attack indicator survives central-sprite suppression");
+                c.options.attackIndicator().set(attackIndicator);
+                c.level.setBlock(pos, Blocks.DIRT.defaultBlockState(), 3);
+                c.level.setBlock(pos.above(), Blocks.STONE.defaultBlockState(), 3);
+                var blocked = PresentationResolver.resolve(ClassicCrosshairResolver.semanticState(c), CrosshairTheme.CLASSIC_PLUS);
+                check(blocked.leftSidecar() == CrosshairPresentation.StateSidecar.BLOCKED && blocked.rightSidecar() == CrosshairPresentation.ActionSidecar.PLACE,
+                        "real blocked placement has left state and right action");
+                var blockedHud = record(c);
+                check(blockedHud.leftAlpha > 0 && blockedHud.foreground > 0 && blockedHud.custom == 1, "real two-sidecar HUD composition");
+                c.level.setBlock(pos, Blocks.CHEST.defaultBlockState(), 3);
+                c.level.setBlock(pos.above(), Blocks.AIR.defaultBlockState(), 3);
+                var chestHit = c.hitResult;
+                for (int i = 0; i < 10; i++) {
+                    c.hitResult = i % 2 == 0 ? BlockHitResult.miss(Vec3.atCenterOf(pos), Direction.UP, pos) : chestHit;
+                    var changedHud = record(c);
+                    check(i % 2 == 0 ? changedHud.foreground == 0 : changedHud.foreground > 0 && changedHud.leftAlpha == 0,
+                            "rapid actual target changes have no stale left/right sidecar");
                 }
                 // Exercise native provenance through actual item components and capture.
                 c.hitResult = BlockHitResult.miss(c.player.getEyePosition().add(0, 0, 5), Direction.UP, c.player.blockPosition());
@@ -89,7 +123,7 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                 var ready = ClassicCrosshairResolver.semanticState(c);
                 check(ready.secondary().action() == ActionKind.USE && ready.secondary().state() == ActionState.READY, "real loaded crossbow remains USE/READY");
                 var compact = PresentationResolver.resolve(ready, CrosshairTheme.CLASSIC_PLUS);
-                check(compact.base() == ClassicCrosshairType.ATTACK && compact.modifier() == CrosshairPresentation.SecondaryModifier.NONE,
+                check(compact.base() == ClassicCrosshairType.ATTACK && compact.rightSidecar() == CrosshairPresentation.ActionSidecar.NONE,
                         "real loaded crossbow has ATTACK base only");
                 c.player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.BOW));
                 c.player.getInventory().setItem(9, new ItemStack(Items.ARROW));
@@ -97,12 +131,12 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                 var charging = ClassicCrosshairResolver.semanticState(c);
                 check(charging.secondary().state() == ActionState.CHARGING, "real bow charging semantic retained");
                 var quiet = PresentationResolver.resolve(charging, CrosshairTheme.CLASSIC_PLUS);
-                check(quiet.base() == ClassicCrosshairType.DOT && quiet.modifier() == CrosshairPresentation.SecondaryModifier.NONE,
+                check(quiet.base() == ClassicCrosshairType.DOT && quiet.rightSidecar() == CrosshairPresentation.ActionSidecar.NONE,
                         "real bow charging in air has DOT only");
                 c.player.stopUsingItem();
                 for (var scenario : scenarios()) {
                     var graphics = new RecordingGraphics(c);
-                    CrosshairHudRenderer.drawPresentation(graphics, PresentationResolver.resolve(scenario.state(), CrosshairTheme.CLASSIC_PLUS), 20, 30, 1);
+                    CrosshairHudRenderer.drawPresentation(graphics, TransitionController.Frame.immediate(PresentationResolver.resolve(scenario.state(), CrosshairTheme.CLASSIC_PLUS)), 20, 30);
                     check(graphics.custom == 1, "gallery uses production base: " + scenario.label());
                 }
             });
@@ -124,10 +158,17 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                     // Fabric's isolated game directory is temporary. Save under
                     // the Gradle run working directory so evidence survives exit.
                     var options = net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
-                            .of("stage-5.1-gallery-scale-" + scale + (light ? "-light" : "-dark"))
+                            .of("stage-5.2-gallery-scale-" + scale + (light ? "-light" : "-dark"))
                             .disableCounterPrefix().withDestinationDir(java.nio.file.Path.of("screenshots").toAbsolutePath());
                     if (scale == 3) options.withSize(1280, 960);
                     context.takeScreenshot(options);
+                    if (scale == 2) {
+                        context.setScreen(() -> new DockingGallery(light));
+                        context.waitTicks(3);
+                        context.takeScreenshot(net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions
+                                .of("stage-5.2-docking-scale-2" + (light ? "-light" : "-dark"))
+                                .disableCounterPrefix().withDestinationDir(java.nio.file.Path.of("screenshots").toAbsolutePath()));
+                    }
                 }
             } finally {
                 context.runOnClient(c -> {
@@ -156,7 +197,7 @@ public final class ClassicPlusTest implements FabricClientGameTest {
     }
     private static void check(boolean value, String label) { if (!value) throw new AssertionError(label); checks++; }
     private static final class RecordingGraphics extends GuiGraphicsExtractor {
-        int custom, vanilla, foreground, foregroundAlpha;
+        int custom, vanilla, foreground, foregroundAlpha, leftAlpha, attackIndicator;
         int baseX, baseY;
         java.awt.image.BufferedImage baseMask;
         final Set<String> allDetailPixels = new HashSet<>();
@@ -179,17 +220,21 @@ public final class ClassicPlusTest implements FabricClientGameTest {
         }
         @Override public void blitSprite(RenderPipeline pipeline, Identifier sprite, int x, int y, int width, int height) {
             if (sprite.equals(Identifier.withDefaultNamespace("hud/crosshair"))) vanilla++;
+            if (sprite.getPath().contains("attack_indicator")) attackIndicator++;
         }
         @Override public void fill(int x1, int y1, int x2, int y2, int color) {
-            if ((color & 0xffffff) == 0xf4f4f4 || (color & 0xffffff) == 0x101010) {
+            if ((color & 0xffffff) == 0xf2eedf || (color & 0xffffff) == 0x161714) {
                 int dx = x1 - baseX, dy = y1 - baseY;
                 if (x2 != x1 + 1 || y2 != y1 + 1) throw new AssertionError("micro pixels changed size");
-                if (dx < 0 || dy < 0 || dx >= 15 || dy >= 15) throw new AssertionError("detail escaped 15x15 canvas");
-                if ((baseMask.getRGB(dx, dy) >>> 24) != 0) throw new AssertionError("detail collided with actual Classic opaque mask");
+                if (dx < -10 || dx >= 25 || dy < 0 || dy >= 15) throw new AssertionError("sidecar escaped 35x15 envelope");
+                if (dx >= 0 && dx < 15 && (baseMask.getRGB(dx, dy) >>> 24) != 0)
+                    throw new AssertionError("sidecar collided with actual Classic opaque mask");
                 if (!allDetailPixels.add(x1 + ":" + y1)) throw new AssertionError("overlapping detail submissions change fade alpha");
             }
-            if ((color & 0xffffff) == 0xf4f4f4) {
-                foreground++; foregroundAlpha = color >>> 24; foregroundPixels.add(x1 + ":" + y1);
+            if ((color & 0xffffff) == 0xf2eedf) {
+                foreground++;
+                if (x1 < baseX) leftAlpha = color >>> 24; else foregroundAlpha = color >>> 24;
+                foregroundPixels.add(x1 + ":" + y1);
                 if (x2 != x1 + 1 || y2 != y1 + 1) throw new AssertionError("detail pixels changed size");
             }
         }
@@ -223,27 +268,55 @@ public final class ClassicPlusTest implements FabricClientGameTest {
                 new Scenario("Atk CD", scene(TargetType.ENTITY, ActionKind.ATTACK, ActionState.COOLDOWN, ActionKind.NONE, ActionState.NORMAL)),
                 new Scenario("Blocked", scene(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.PLACE, ActionState.BLOCKED)),
                 new Scenario("Invalid", scene(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.PLACE, ActionState.INVALID)),
-                new Scenario("Special", scene(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.SPECIAL, ActionState.NORMAL)));
+                new Scenario("Special", scene(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.SPECIAL, ActionState.NORMAL)),
+                new Scenario("Locked UI", scene(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.INTERACT, ActionState.BLOCKED)));
     }
 
     /** Typical semantic scenes pass through the production policy and renderer. */
     private static final class Gallery extends Screen {
         private final boolean light;
         private final List<Scenario> scenes = scenarios();
-        Gallery(boolean light) { super(Component.literal("Classic+ micro visual acceptance")); this.light = light; }
+        Gallery(boolean light) { super(Component.literal("Classic+ sidecar visual acceptance")); this.light = light; }
         @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
             int text = light ? 0xff15191d : 0xfff4f4f4;
             g.fill(0, 0, width, height, light ? 0xffd4d4cc : 0xff344c32);
-            g.text(font, "Classic+ micro | GUI " + minecraft.options.guiScale().get() + (light ? " | light" : " | dark"), 10, 8, text);
+            g.text(font,  "Classic+ sidecars | GUI " + minecraft.options.guiScale().get() + (light ? " | light" : " | dark"), 10, 8, text);
             int cellWidth = (width - 20) / 5;
             for (int i = 0; i < scenes.size(); i++) {
                 int x = 10 + i % 5 * cellWidth, y = 32 + i / 5 * 48;
                 var scenario = scenes.get(i);
                 g.text(font, scenario.label(), x, y, text);
                 var p = PresentationResolver.resolve(scenario.state(), CrosshairTheme.CLASSIC_PLUS);
-                CrosshairHudRenderer.drawPresentation(g, p, x + 15, y + 16, 1);
+                CrosshairHudRenderer.drawPresentation(g, TransitionController.Frame.immediate(p), x + 15, y + 16);
             }
-            g.text(font, "One optional micro hint. No status icons.", 10, height - 18, text);
+            g.text(font, "Right: action. Left: rare blocked state.", 10, height - 18, text);
+        }
+        @Override public boolean isPauseScreen() { return false; }
+    }
+
+    private static final class DockingGallery extends Screen {
+        private final boolean light;
+        private final List<List<TransitionController.Frame>> rows = new ArrayList<>();
+        DockingGallery(boolean light) {
+            super(Component.literal("Deterministic production docking samples")); this.light = light;
+            for (var state : List.of(ActionState.NORMAL, ActionState.BLOCKED)) {
+                var p = PresentationResolver.resolve(scene(TargetType.BLOCK, ActionKind.MINE, ActionState.NORMAL, ActionKind.PLACE, state), CrosshairTheme.CLASSIC_PLUS);
+                var controller = new TransitionController();
+                rows.add(List.of(controller.update(p, TransitionMode.SUBTLE, 0), controller.update(p, TransitionMode.SUBTLE, 25_000_000),
+                        controller.update(p, TransitionMode.SUBTLE, 50_000_000), controller.update(p, TransitionMode.SUBTLE, 100_000_000)));
+            }
+        }
+        @Override public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+            g.fill(0, 0, width, height, light ? 0xffd4d4cc : 0xff344c32);
+            int color = light ? 0xff15191d : 0xfff4f4f4;
+            g.text(font, "Production docking | GUI 2 | 100ms ease-out", 10, 8, color);
+            String[] times = {"0ms", "25ms", "50ms", "100ms"};
+            for (int row = 0; row < 2; row++) for (int col = 0; col < 4; col++) {
+                int x = 10 + col * (width - 20) / 4, y = 40 + row * 75;
+                g.text(font, times[col], x, y, color);
+                CrosshairHudRenderer.drawPresentation(g, rows.get(row).get(col), x + 20, y + 18);
+            }
+            g.text(font, "Same meaning immediately. No exit trail.", 10, height - 18, color);
         }
         @Override public boolean isPauseScreen() { return false; }
     }
