@@ -1,5 +1,9 @@
 # Unified timing and inverse contrast outline
 
+> Historical experiment: rejected by the user on 2026-10-26. The contour and
+> its option/tests were removed; the unified 140ms timing remains. See
+> [rollback record](OUTLINE_ROLLBACK.md). The results below describe the former build.
+
 Baseline `aac03fc`; branch `26.3`; version `0.1.0-core-animation.2+mc26.3`.
 Scope: the two user-approved adjustments, with no detection/theme/sidecar changes.
 

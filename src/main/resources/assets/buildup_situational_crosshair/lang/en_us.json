@@ -3,7 +3,5 @@
   "buildup_situational_crosshair.disabled": "Vanilla crosshair restored",
   "buildup_situational_crosshair.animation.off": "Crosshair animation disabled",
   "buildup_situational_crosshair.animation.fade": "Crosshair animation: fade",
-  "buildup_situational_crosshair.animation.expand": "Crosshair animation: gentle expansion",
-  "buildup_situational_crosshair.outline.on": "Crosshair outline enabled",
-  "buildup_situational_crosshair.outline.off": "Pure inverted crosshair"
+  "buildup_situational_crosshair.animation.expand": "Crosshair animation: gentle expansion"
 }

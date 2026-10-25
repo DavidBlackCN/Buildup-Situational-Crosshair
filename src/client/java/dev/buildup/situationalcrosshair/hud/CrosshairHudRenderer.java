@@ -8,7 +8,6 @@ import net.minecraft.resources.Identifier;
 
 import dev.buildup.situationalcrosshair.CrosshairOptions;
 import dev.buildup.situationalcrosshair.crosshair.CrosshairTransition;
-import dev.buildup.situationalcrosshair.crosshair.CrosshairOutline;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import java.util.function.Supplier;
 
@@ -17,7 +16,6 @@ public final class CrosshairHudRenderer {
     private static CrosshairTransition transition;
     private static float[][] loadedMasks;
     private static Object level;
-    private static final float[] outline = new float[CrosshairOutline.SIZE * CrosshairOutline.SIZE];
 
     // Only accessed synchronously during the HUD extraction on the client thread.
     private static ClassicCrosshairType pending;
@@ -78,17 +76,6 @@ public final class CrosshairHudRenderer {
             return;
         }
         var frame = transition.update(type, CrosshairOptions.animation(), now);
-        if (CrosshairOptions.outline()) {
-            CrosshairOutline.write(frame, outline);
-            for (int i = 0; i < outline.length; i++) {
-                int alpha = Math.round(outline[i] * 255);
-                if (alpha == 0) continue;
-                int px = x + i % CrosshairOutline.SIZE - 1;
-                int py = y + i / CrosshairOutline.SIZE - 1;
-                // Normal alpha blend, before the inverse body; no darkening under full pixels.
-                graphics.fill(px, py, px + 1, py + 1, alpha << 24);
-            }
-        }
         if (!transition.active()) {
             graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(type), x, y, 0, 0, 15, 15, 15, 15);
             return;
