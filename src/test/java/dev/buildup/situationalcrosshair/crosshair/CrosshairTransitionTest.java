@@ -21,6 +21,17 @@ public final class CrosshairTransitionTest {
                 c.update(b, mode, 0);
                 for (int ms : new int[]{0, 10, 35, 65, 100, 140, 200}) {
                     var frame = c.update(b, mode, ms * 1_000_000L);
+                    if (a != b && mode != CrosshairTransition.Mode.OFF)
+                        check(c.active() == (ms < 140), "all shape transitions last 140ms");
+                    var edge = new float[289];
+                    CrosshairOutline.write(frame, edge);
+                    check(edge[8 * 17 + 8] == 0, "no outline under center");
+                    for (int j = 0; j < edge.length; j++) {
+                        check(edge[j] >= 0 && edge[j] <= 0.42f, "bounded border opacity");
+                        int x = j % 17 - 1, y = j / 17 - 1;
+                        if (x >= 0 && y >= 0 && x < 15 && y < 15 && frame[y * 15 + x] == 1)
+                            check(edge[j] == 0, "no border under full body pixels");
+                    }
                     check(frame[112] == 1, "center never fades");
                     for (int i = 0; i < frame.length; i++) {
                         check(Float.isFinite(frame[i]) && frame[i] >= 0 && frame[i] <= 1, "bounded coverage");
@@ -49,6 +60,20 @@ public final class CrosshairTransitionTest {
             c.update(null, mode, 2);
             check(!c.active(), "Vanilla fallback clears transition");
         }
+        var dotEdge = new float[289];
+        CrosshairOutline.write(masks[ClassicCrosshairType.DOT.ordinal()], dotEdge);
+        int dotNeighbors = 0;
+        for (float value : dotEdge) if (value > 0) {
+            dotNeighbors++;
+            check(value == 0.22f, "DOT has a lighter border");
+        }
+        check(dotNeighbors == 4, "DOT has no diagonal box");
+        var reused = dotEdge.clone();
+        CrosshairOutline.write(masks[ClassicCrosshairType.ERROR.ordinal()], reused);
+        CrosshairOutline.write(masks[ClassicCrosshairType.DOT.ordinal()], reused);
+        check(Arrays.equals(reused, dotEdge), "no old outline after shape change");
+        CrosshairOutline.write(new float[225], reused);
+        check(Arrays.equals(reused, new float[289]), "empty frame clears all outline");
         System.out.println("PASS: " + checks + " crosshair animation assertions");
     }
     private static void check(boolean condition, String message) {

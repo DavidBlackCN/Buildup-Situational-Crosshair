@@ -1,8 +1,8 @@
 # Buildup Situational Crosshair
 
-Client-only Fabric mod for Minecraft **26.3**, version `0.1.0-core-animation.1+mc26.3`.
+Client-only Fabric mod for Minecraft **26.3**, version `0.1.0-core-animation.2+mc26.3`.
 No server installation is required. Core Reset replaces the previous expansion
-roadmap. This first follow-up adds transitions to the central Classic crosshair.
+roadmap. The central Classic crosshair supports transitions and an optional subtle contrast outline.
 
 The mod retains the original 15x15 Classic DOT, BLOCK, ATTACK and ERROR textures.
 Air uses DOT; entity targets use ATTACK; mining checks native breakability and
@@ -21,6 +21,8 @@ The central crosshair now has a small time-based transition; there is no theme s
 - `/crosshair animation expand`: gentle outward/inward transition (default).
 - `/crosshair animation fade`: change only pixel strength, without movement.
 - `/crosshair animation off`: immediate original texture switching.
+- `/crosshair outline on`: inverted body with a subtle dark contour (default).
+- `/crosshair outline off`: pure original inversion.
 
 The settings last for the current client session, including world changes.
 `CrosshairOptions.enabled()` / `setEnabled(boolean)` is the minimal client-thread
@@ -28,14 +30,24 @@ interface for a future GUI. There is no settings screen, persistence or extra
 configuration library in this version. Animation options use the same
 client-thread `CrosshairOptions.animation()` / `setAnimation(Mode)` interface.
 
-The center remains steady. DOT-to-outline/attack takes 140ms, return to DOT
-100ms, and entry into ERROR 65ms. Shared BLOCK/ERROR outline pixels remain
+The center remains steady. All shape transitions take **140ms**, including
+return to DOT and entry into ERROR; the cubic ease-out curve is unchanged. Shared BLOCK/ERROR outline pixels remain
 unchanged; interruptions continue from the displayed frame. Expand distributes
 moving pixels across neighboring GUI pixels during its maximum one-pixel travel
 per axis, so intermediate frames are softer; endpoints use the original PNGs.
 Resource reload refreshes the masks. Packs with non-15x15, colored/translucent
 pixels, missing shared centers or a non-single-pixel DOT render immediately
-without animation, preserving their selected textures.
+without animation or outline, preserving their selected textures.
+
+The contour uses ordinary black alpha blending around the inverted body, with
+42% maximum opacity and a lighter 22% contribution from the central point.
+Only the four cardinal neighbors are used, avoiding a diagonal box around DOT.
+It follows the current animated coverage and never darkens fully covered body
+pixels. Partially covered moving edges receive proportionately reduced backing.
+There is no framebuffer readback or brightness-based color switching. Pure
+inversion remains available; the contour improves gray-background separation
+but adds visible weight, especially on snow. These are session-only settings;
+`CrosshairOptions.outline()` / `setOutline(boolean)` is the GUI-ready entry point.
 
 ## Build and validation
 
@@ -54,7 +66,7 @@ assets do not ship in the mod JAR. It checks actual native mining/item behavior
 and transformed HUD submissions. Automated tests do not replace manual visual
 and modpack acceptance. `build` runs deterministic transition contracts via
 `animationTest`; client tests also capture six transition galleries.
-See [animation report](docs/MAIN_CROSSHAIR_ANIMATION_REPORT.md) and the historical
+See [timing/outline report](docs/CROSSHAIR_CONTRAST_REPORT.md), [animation report](docs/MAIN_CROSSHAIR_ANIMATION_REPORT.md) and the historical
 [Core Reset report](docs/CORE_RESET_REPORT.md).
 
 ## Attribution

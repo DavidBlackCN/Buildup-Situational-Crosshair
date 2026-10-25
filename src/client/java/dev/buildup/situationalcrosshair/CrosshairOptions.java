@@ -10,6 +10,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 public final class CrosshairOptions {
     private static boolean enabled = true;
     private static Mode animation = Mode.EXPAND;
+    private static boolean outline = true;
     private CrosshairOptions() { }
     public static boolean enabled() { return enabled; }
     public static void setEnabled(boolean value) {
@@ -17,6 +18,8 @@ public final class CrosshairOptions {
         CrosshairHudRenderer.resetAnimation();
     }
     public static Mode animation() { return animation; }
+    public static boolean outline() { return outline; }
+    public static void setOutline(boolean value) { outline = value; }
     public static void setAnimation(Mode value) {
         animation = java.util.Objects.requireNonNull(value);
         CrosshairHudRenderer.resetAnimation();
@@ -38,7 +41,19 @@ public final class CrosshairOptions {
                         .then(literal("animation")
                                 .then(animationCommand("off", Mode.OFF))
                                 .then(animationCommand("fade", Mode.FADE))
-                                .then(animationCommand("expand", Mode.EXPAND)))));
+                                .then(animationCommand("expand", Mode.EXPAND)))
+                        .then(literal("outline")
+                                .then(outlineCommand("on", true))
+                                .then(outlineCommand("off", false)))));
+    }
+
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource>
+            outlineCommand(String name, boolean enabled) {
+        return literal(name).executes(c -> {
+            setOutline(enabled);
+            c.getSource().sendFeedback(Component.translatable("buildup_situational_crosshair.outline." + name));
+            return 1;
+        });
     }
 
     private static com.mojang.brigadier.builder.LiteralArgumentBuilder<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource>

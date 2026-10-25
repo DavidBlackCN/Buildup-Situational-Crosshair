@@ -6,6 +6,7 @@ import java.util.Arrays;
 public final class CrosshairTransition {
     public enum Mode { OFF, FADE, EXPAND }
     public static final int SIZE = 15;
+    public static final long DURATION_NANOS = 140_000_000L;
     private static final int CENTER = 7 * SIZE + 7;
     private final float[][] masks;
     private final float[] from = new float[SIZE * SIZE];
@@ -13,7 +14,6 @@ public final class CrosshairTransition {
     private ClassicCrosshairType target;
     private Mode mode;
     private long start;
-    private long duration;
     private boolean active;
     private int motion;
 
@@ -37,7 +37,6 @@ public final class CrosshairTransition {
             copy(frame, from);
             target = next;
             start = now;
-            duration = (next == ClassicCrosshairType.ERROR ? 65 : next == ClassicCrosshairType.DOT ? 100 : 140) * 1_000_000L;
             motion = nextMode != Mode.EXPAND ? 0 : next == ClassicCrosshairType.DOT ? -1
                     : fromDot && next != ClassicCrosshairType.ERROR ? 1 : 0;
             active = true;
@@ -48,7 +47,7 @@ public final class CrosshairTransition {
 
     private void sample(long now) {
         if (!active) return;
-        float time = Math.clamp((float) (now - start) / duration, 0, 1);
+        float time = Math.clamp((float) (now - start) / DURATION_NANOS, 0, 1);
         float t = 1 - (1 - time) * (1 - time) * (1 - time);
         var goal = masks[target.ordinal()];
         if (time >= 1) {

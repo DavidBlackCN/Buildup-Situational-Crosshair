@@ -1,0 +1,7 @@
+PASS: 224 fully covered body pixel pairs identical between pure inversion and outlined rendering (GUI 2, four materials).
+crosshair_attack.png SHA256 225ea90e45ba23425744fd0f3d42d505cc254be5277b72f189ab4e7908bd20e7
+crosshair_block.png SHA256 314b3519a188ebd8d1928f3c97bf9623f8448f5044624859fd283b1a85e4cda3
+crosshair_dot.png SHA256 52e03987189f2bed70092fd89304e2ff4036b19b8450e84b37dac30342e6f0da
+crosshair_error.png SHA256 80cd6439c9e49f263327f257c1dc53a9d179953b5d9d90a8f93f16b8564ab67b
+PASS: textures/licenses unchanged; no sidecar/rule/semantic/test classes packaged.
+JAR: buildup-situational-crosshair-0.1.0-core-animation.2+mc26.3.jar

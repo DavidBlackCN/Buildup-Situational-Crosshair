@@ -42,6 +42,16 @@ final class HudParityChecks {
             command(client, "crosshair animation " + mode.name().toLowerCase(java.util.Locale.ROOT));
             if (CrosshairOptions.animation() != mode) throw new AssertionError("Animation command");
         }
+        command(client, "crosshair outline off");
+        if (CrosshairOptions.outline()) throw new AssertionError("Outline off command");
+        var noOutline = new RecordingGraphics(client);
+        client.gui.hud.extractRenderState(noOutline, DeltaTracker.ONE);
+        if (noOutline.outlinePixels != 0) throw new AssertionError("Outline off still renders contour");
+        command(client, "crosshair outline on");
+        if (!CrosshairOptions.outline()) throw new AssertionError("Outline on command");
+        var outlined = new RecordingGraphics(client);
+        client.gui.hud.extractRenderState(outlined, DeltaTracker.ONE);
+        if (outlined.outlinePixels == 0) throw new AssertionError("Outline on missing contour");
         command(client, "crosshair animation off");
         command(client, "crosshair disable");
         if (CrosshairOptions.enabled()) throw new AssertionError("Disable command");
@@ -91,8 +101,8 @@ final class HudParityChecks {
 
     private static void command(Minecraft client, String command) {
         var dispatcher = net.fabricmc.fabric.api.client.command.v2.ClientCommands.getActiveDispatcher();
-        if (dispatcher.getRoot().getChild("crosshair").getChildren().size() != 3)
-            throw new AssertionError("Expected enable/disable/animation commands");
+        if (dispatcher.getRoot().getChild("crosshair").getChildren().size() != 4)
+            throw new AssertionError("Expected enable/disable/animation/outline commands");
         try {
             if (dispatcher.execute(command, (net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource)
                     client.getConnection().getSuggestionsProvider()) != 1)
@@ -105,7 +115,7 @@ final class HudParityChecks {
     static void check(Minecraft client, int custom, int vanilla, String label) {
         var graphics = new RecordingGraphics(client);
         client.gui.hud.extractRenderState(graphics, DeltaTracker.ONE);
-        if (graphics.custom != custom || graphics.vanilla != vanilla) {
+        if (graphics.custom != custom || graphics.vanilla != vanilla || custom == 0 && graphics.outlinePixels != 0) {
             throw new AssertionError(label + ": custom=" + graphics.custom + ", vanilla=" + graphics.vanilla);
         }
     }
@@ -114,6 +124,7 @@ final class HudParityChecks {
         int custom;
         int vanilla;
         int attackIndicator;
+        int outlinePixels;
         int animatedPixels, animatedCenter;
         final java.util.Set<Long> drawnPixels = new java.util.HashSet<>();
 
@@ -146,6 +157,16 @@ final class HudParityChecks {
             if (x == (guiWidth() - 15) / 2 + 7 && y == (guiHeight() - 15) / 2 + 7) {
                 animatedCenter++;
                 if (color != 0xffffffff) throw new AssertionError("Animated center faded");
+            }
+        }
+
+        @Override public void fill(int x1, int y1, int x2, int y2, int color) {
+            int cx = (guiWidth() - 15) / 2, cy = (guiHeight() - 15) / 2;
+            if (x2 == x1 + 1 && y2 == y1 + 1 && (color & 0xffffff) == 0
+                    && (color >>> 24) > 0 && (color >>> 24) <= 107
+                    && x1 >= cx - 1 && x1 <= cx + 15 && y1 >= cy - 1 && y1 <= cy + 15) {
+                outlinePixels++;
+                if (x1 == cx + 7 && y1 == cy + 7) throw new AssertionError("Contour under center");
             }
         }
 
