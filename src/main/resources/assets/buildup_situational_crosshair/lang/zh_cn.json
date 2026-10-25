@@ -1,4 +1,7 @@
 {
   "buildup_situational_crosshair.enabled": "已启用自定义准星",
-  "buildup_situational_crosshair.disabled": "已恢复原版准星"
+  "buildup_situational_crosshair.disabled": "已恢复原版准星",
+  "buildup_situational_crosshair.animation.off": "已关闭准星动画",
+  "buildup_situational_crosshair.animation.fade": "准星动画：原位渐变",
+  "buildup_situational_crosshair.animation.expand": "准星动画：轻微展开"
 }

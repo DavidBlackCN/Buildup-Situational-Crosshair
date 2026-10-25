@@ -10,6 +10,7 @@ public final class BuildupSituationalCrosshairClient implements ClientModInitial
     public static final String MOD_ID = "buildup_situational_crosshair";
     @Override
     public void onInitializeClient() {
+        dev.buildup.situationalcrosshair.hud.CrosshairTextures.register();
         CrosshairOptions.registerCommands();
         CrosshairHudRenderer.register(() -> CrosshairOptions.enabled()
                 ? ClassicCrosshairResolver.resolve(Minecraft.getInstance()) : null);

@@ -38,6 +38,11 @@ final class HudParityChecks {
         check(client, 1, 0, "spyglass follows vanilla");
         client.player.stopUsingItem();
         client.player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        for (var mode : dev.buildup.situationalcrosshair.crosshair.CrosshairTransition.Mode.values()) {
+            command(client, "crosshair animation " + mode.name().toLowerCase(java.util.Locale.ROOT));
+            if (CrosshairOptions.animation() != mode) throw new AssertionError("Animation command");
+        }
+        command(client, "crosshair animation off");
         command(client, "crosshair disable");
         if (CrosshairOptions.enabled()) throw new AssertionError("Disable command");
         check(client, 0, 1, "disabled restores Vanilla");
@@ -63,6 +68,20 @@ final class HudParityChecks {
             client.options.guiScale().set(originalScale);
             client.resizeGui();
         }
+        // Exercise the actual wrapped HUD with animation enabled, not only the drawing helper.
+        CrosshairOptions.setAnimation(dev.buildup.situationalcrosshair.crosshair.CrosshairTransition.Mode.EXPAND);
+        check(client, 1, 0, "animated HUD first frame");
+        var airTarget = client.hitResult;
+        client.hitResult = new net.minecraft.world.phys.EntityHitResult(client.player);
+        var animated = new RecordingGraphics(client);
+        client.gui.hud.extractRenderState(animated, DeltaTracker.ONE);
+        if (animated.animatedPixels == 0 || animated.animatedCenter != 1 || animated.vanilla != 0 || animated.custom != 0)
+            throw new AssertionError("Animated HUD must replace only the Vanilla center");
+        CrosshairOptions.setEnabled(false);
+        check(client, 0, 1, "disable during animation");
+        CrosshairOptions.setEnabled(true);
+        CrosshairOptions.setAnimation(dev.buildup.situationalcrosshair.crosshair.CrosshairTransition.Mode.OFF);
+        client.hitResult = airTarget;
         var target = client.hitResult;
         client.hitResult = null;
         check(client, 0, 1, "null target vanilla fallback");
@@ -72,8 +91,8 @@ final class HudParityChecks {
 
     private static void command(Minecraft client, String command) {
         var dispatcher = net.fabricmc.fabric.api.client.command.v2.ClientCommands.getActiveDispatcher();
-        if (dispatcher.getRoot().getChild("crosshair").getChildren().size() != 2)
-            throw new AssertionError("Only enable/disable commands should remain");
+        if (dispatcher.getRoot().getChild("crosshair").getChildren().size() != 3)
+            throw new AssertionError("Expected enable/disable/animation commands");
         try {
             if (dispatcher.execute(command, (net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource)
                     client.getConnection().getSuggestionsProvider()) != 1)
@@ -95,6 +114,8 @@ final class HudParityChecks {
         int custom;
         int vanilla;
         int attackIndicator;
+        int animatedPixels, animatedCenter;
+        final java.util.Set<Long> drawnPixels = new java.util.HashSet<>();
 
         RecordingGraphics(Minecraft client) {
             super(client, new GuiRenderState(), 0, 0);
@@ -113,6 +134,18 @@ final class HudParityChecks {
                 if (Minecraft.getInstance().getResourceManager().getResource(texture).isEmpty()) {
                     throw new AssertionError("Missing Classic texture: " + texture);
                 }
+            }
+        }
+
+        @Override public void blit(RenderPipeline pipeline, Identifier texture, int x, int y,
+                                   float u, float v, int w, int h, int tw, int th, int color) {
+            if (!texture.getNamespace().equals(BuildupSituationalCrosshairClient.MOD_ID)) return;
+            animatedPixels++;
+            if (!drawnPixels.add(((long) x << 32) | (y & 0xffffffffL)))
+                throw new AssertionError("Double inverse blend in actual HUD");
+            if (x == (guiWidth() - 15) / 2 + 7 && y == (guiHeight() - 15) / 2 + 7) {
+                animatedCenter++;
+                if (color != 0xffffffff) throw new AssertionError("Animated center faded");
             }
         }
 

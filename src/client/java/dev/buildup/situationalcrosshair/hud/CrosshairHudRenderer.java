@@ -1,22 +1,21 @@
 package dev.buildup.situationalcrosshair.hud;
 
-import dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient;
 import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairType;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 
-import java.util.Map;
+import dev.buildup.situationalcrosshair.CrosshairOptions;
+import dev.buildup.situationalcrosshair.crosshair.CrosshairTransition;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import java.util.function.Supplier;
 
 public final class CrosshairHudRenderer {
     private static final Identifier VANILLA_CROSSHAIR = Identifier.withDefaultNamespace("hud/crosshair");
-    private static final Map<ClassicCrosshairType, Identifier> TEXTURES = Map.of(
-            ClassicCrosshairType.DOT, texture("dot"),
-            ClassicCrosshairType.BLOCK, texture("block"),
-            ClassicCrosshairType.ATTACK, texture("attack"),
-            ClassicCrosshairType.ERROR, texture("error"));
+    private static CrosshairTransition transition;
+    private static float[][] loadedMasks;
+    private static Object level;
 
     // Only accessed synchronously during the HUD extraction on the client thread.
     private static ClassicCrosshairType pending;
@@ -25,6 +24,11 @@ public final class CrosshairHudRenderer {
     private CrosshairHudRenderer() { }
 
     public static void register(Supplier<ClassicCrosshairType> crosshair) {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (level != client.level || client.player == null || !CrosshairOptions.enabled()
+                    || client.gui.hud.isHidden() || !client.options.getCameraType().isFirstPerson()) resetAnimation();
+            level = client.level;
+        });
         HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, original -> (graphics, delta) -> {
             pending = crosshair.get();
             vanillaRequestedCrosshair = false;
@@ -35,8 +39,9 @@ public final class CrosshairHudRenderer {
                 if (vanillaRequestedCrosshair) {
                     int x = (graphics.guiWidth() - 15) / 2;
                     int y = (graphics.guiHeight() - 15) / 2;
-                    graphics.blit(RenderPipelines.CROSSHAIR, TEXTURES.get(pending), x, y,
-                            0, 0, 15, 15, 15, 15);
+                    draw(graphics, pending, x, y, System.nanoTime());
+                } else {
+                    resetAnimation();
                 }
             } finally {
                 pending = null;
@@ -54,8 +59,35 @@ public final class CrosshairHudRenderer {
         return true;
     }
 
-    private static Identifier texture(String name) {
-        return Identifier.fromNamespaceAndPath(BuildupSituationalCrosshairClient.MOD_ID,
-                "textures/gui/crosshair_" + name + ".png");
+    public static void resetAnimation() {
+        if (transition != null) transition.reset();
+    }
+
+    /** Also used by deterministic client visual checks. Positions are GUI pixels. */
+    public static void draw(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
+                            ClassicCrosshairType type, int x, int y, long now) {
+        var masks = CrosshairTextures.masks();
+        if (loadedMasks != masks) {
+            loadedMasks = masks;
+            transition = masks == null ? null : new CrosshairTransition(masks);
+        }
+        if (transition == null) {
+            graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(type), x, y, 0, 0, 15, 15, 15, 15);
+            return;
+        }
+        var frame = transition.update(type, CrosshairOptions.animation(), now);
+        if (!transition.active()) {
+            graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(type), x, y, 0, 0, 15, 15, 15, 15);
+            return;
+        }
+        // Merge coverage BEFORE drawing: one inverse blend per screen pixel.
+        // INVERT uses source RGB, so alpha-only fading would not fade its color.
+        for (int i = 0; i < frame.length; i++) {
+            int strength = Math.clamp(Math.round(frame[i] * 255), 0, 255);
+            if (strength == 0) continue;
+            int color = 0xff000000 | strength << 16 | strength << 8 | strength;
+            graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(ClassicCrosshairType.DOT),
+                    x + i % 15, y + i / 15, 7, 7, 1, 1, 15, 15, color);
+        }
     }
 }

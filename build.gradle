@@ -49,3 +49,12 @@ jar {
     from('THIRD_PARTY_NOTICES.md')
     from('licenses') { into 'licenses' }
 }
+
+// Deterministic contracts for interrupted transitions and exact Classic endpoints.
+tasks.register('animationTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.buildup.situationalcrosshair.crosshair.CrosshairTransitionTest'
+}
+check.dependsOn animationTest
+tasks.named('test') { exclude '**/CrosshairTransitionTest.class' }
