@@ -2,9 +2,6 @@ package dev.buildup.situationalcrosshair.hud;
 
 import dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient;
 import dev.buildup.situationalcrosshair.crosshair.ClassicCrosshairType;
-import dev.buildup.situationalcrosshair.presentation.CrosshairPresentation;
-import dev.buildup.situationalcrosshair.presentation.TransitionController;
-import dev.buildup.situationalcrosshair.presentation.TransitionMode;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -22,27 +19,24 @@ public final class CrosshairHudRenderer {
             ClassicCrosshairType.ERROR, texture("error"));
 
     // Only accessed synchronously during the HUD extraction on the client thread.
-    private static CrosshairPresentation pending;
+    private static ClassicCrosshairType pending;
     private static boolean vanillaRequestedCrosshair;
-    private static final TransitionController TRANSITION = new TransitionController();
 
     private CrosshairHudRenderer() { }
 
-    public static void register(Supplier<CrosshairPresentation> presentation, Supplier<TransitionMode> animation) {
+    public static void register(Supplier<ClassicCrosshairType> crosshair) {
         HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, original -> (graphics, delta) -> {
-            pending = presentation.get();
+            pending = crosshair.get();
             vanillaRequestedCrosshair = false;
             try {
                 // Vanilla owns visibility, spectator checks, debug behavior and
                 // attack indicators. The mixin suppresses only its central sprite.
                 original.extractRenderState(graphics, delta);
                 if (vanillaRequestedCrosshair) {
-                    var frame = TRANSITION.update(pending, animation.get(), System.nanoTime());
                     int x = (graphics.guiWidth() - 15) / 2;
                     int y = (graphics.guiHeight() - 15) / 2;
-                    drawPresentation(graphics, frame, x, y);
-                } else {
-                    TRANSITION.reset();
+                    graphics.blit(RenderPipelines.CROSSHAIR, TEXTURES.get(pending), x, y,
+                            0, 0, 15, 15, 15, 15);
                 }
             } finally {
                 pending = null;
@@ -51,19 +45,9 @@ public final class CrosshairHudRenderer {
         });
     }
 
-    /** Shared drawing path for one resolved frame; coordinates are GUI pixels. */
-    public static void drawPresentation(net.minecraft.client.gui.GuiGraphicsExtractor graphics,
-            TransitionController.Frame frame, int x, int y) {
-        var presentation = frame.presentation();
-        if (!presentation.customVisible()) return;
-        graphics.blit(RenderPipelines.CROSSHAIR, TEXTURES.get(presentation.base()), x, y,
-                0, 0, 15, 15, 15, 15);
-        CrosshairDecorationRenderer.draw(graphics, frame, x, y);
-    }
-
     /** Called at the exact vanilla sprite draw; no target detection in the mixin. */
     public static boolean shouldDrawVanillaSprite(Identifier sprite) {
-        if (pending != null && pending.customVisible() && VANILLA_CROSSHAIR.equals(sprite)) {
+        if (pending != null && VANILLA_CROSSHAIR.equals(sprite)) {
             vanillaRequestedCrosshair = true;
             return false;
         }

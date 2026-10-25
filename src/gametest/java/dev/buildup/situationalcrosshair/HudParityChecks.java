@@ -38,11 +38,49 @@ final class HudParityChecks {
         check(client, 1, 0, "spyglass follows vanilla");
         client.player.stopUsingItem();
         client.player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        command(client, "crosshair disable");
+        if (CrosshairOptions.enabled()) throw new AssertionError("Disable command");
+        check(client, 0, 1, "disabled restores Vanilla");
+        command(client, "crosshair enable");
+        if (!CrosshairOptions.enabled()) throw new AssertionError("Enable command");
+        check(client, 1, 0, "re-enabled immediately");
+        var indicator = client.options.attackIndicator().get();
+        client.options.attackIndicator().set(net.minecraft.client.AttackIndicatorStatus.CROSSHAIR);
+        client.player.resetAttackStrengthTicker();
+        var attack = new RecordingGraphics(client);
+        client.gui.hud.extractRenderState(attack, DeltaTracker.ONE);
+        if (attack.attackIndicator == 0 || attack.custom != 1 || attack.vanilla != 0)
+            throw new AssertionError("Vanilla attack indicator must survive replacement");
+        client.options.attackIndicator().set(indicator);
+        int originalScale = client.options.guiScale().get();
+        try {
+            for (int scale = 1; scale <= 3; scale++) {
+                client.options.guiScale().set(scale);
+                client.resizeGui();
+                check(client, 1, 0, "GUI scale " + scale);
+            }
+        } finally {
+            client.options.guiScale().set(originalScale);
+            client.resizeGui();
+        }
         var target = client.hitResult;
         client.hitResult = null;
         check(client, 0, 1, "null target vanilla fallback");
         client.hitResult = target;
-        org.slf4j.LoggerFactory.getLogger("classic-parity-test").info("PASS: 7 transformed HUD visibility/submission cases");
+        org.slf4j.LoggerFactory.getLogger("classic-parity-test").info("PASS: HUD visibility, enable switch, attack indicator and GUI scales 1/2/3");
+    }
+
+    private static void command(Minecraft client, String command) {
+        var dispatcher = net.fabricmc.fabric.api.client.command.v2.ClientCommands.getActiveDispatcher();
+        if (dispatcher.getRoot().getChild("crosshair").getChildren().size() != 2)
+            throw new AssertionError("Only enable/disable commands should remain");
+        try {
+            if (dispatcher.execute(command, (net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource)
+                    client.getConnection().getSuggestionsProvider()) != 1)
+                throw new AssertionError("Command failed: " + command);
+        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException ex) {
+            throw new AssertionError(command, ex);
+        }
     }
 
     static void check(Minecraft client, int custom, int vanilla, String label) {
@@ -56,6 +94,7 @@ final class HudParityChecks {
     private static final class RecordingGraphics extends GuiGraphicsExtractor {
         int custom;
         int vanilla;
+        int attackIndicator;
 
         RecordingGraphics(Minecraft client) {
             super(client, new GuiRenderState(), 0, 0);
@@ -66,6 +105,8 @@ final class HudParityChecks {
                          float u, float v, int width, int height, int textureWidth, int textureHeight) {
             if (texture.getNamespace().equals(BuildupSituationalCrosshairClient.MOD_ID)) {
                 custom++;
+                if (x != (guiWidth() - 15) / 2 || y != (guiHeight() - 15) / 2)
+                    throw new AssertionError("Classic crosshair is not centered");
                 if (width != 15 || height != 15 || textureWidth != 15 || textureHeight != 15) {
                     throw new AssertionError("Classic dimensions changed");
                 }
@@ -77,6 +118,7 @@ final class HudParityChecks {
 
         @Override
         public void blitSprite(RenderPipeline pipeline, Identifier sprite, int x, int y, int width, int height) {
+            if (sprite.getPath().contains("attack_indicator")) attackIndicator++;
             if (sprite.equals(Identifier.withDefaultNamespace("hud/crosshair"))) vanilla++;
         }
     }

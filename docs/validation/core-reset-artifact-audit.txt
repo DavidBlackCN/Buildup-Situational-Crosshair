@@ -1,0 +1,18 @@
+Production Java files: 45 -> 6
+crosshair_attack.png: 225ea90e45ba23425744fd0f3d42d505cc254be5277b72f189ab4e7908bd20e7
+crosshair_block.png: 314b3519a188ebd8d1928f3c97bf9623f8448f5044624859fd283b1a85e4cda3
+crosshair_dot.png: 52e03987189f2bed70092fd89304e2ff4036b19b8450e84b37dac30342e6f0da
+crosshair_error.png: 80cd6439c9e49f263327f257c1dc53a9d179953b5d9d90a8f93f16b8564ab67b
+JAR: buildup-situational-crosshair-0.1.0-core-reset+mc26.3.jar
+PASS: exactly four PNGs; baseline texture bytes unchanged.
+PASS: original license text unchanged (Git LF / checkout CRLF); packaged bytes match checkout.
+PASS: client-only metadata, one HUD mixin, no removed modules or test classes.
+Packaged classes:
+dev/buildup/situationalcrosshair/crosshair/ClassicCrosshairType.class
+dev/buildup/situationalcrosshair/BuildupSituationalCrosshairClient.class
+dev/buildup/situationalcrosshair/CrosshairOptions.class
+dev/buildup/situationalcrosshair/crosshair/ClassicCrosshairResolver$1.class
+dev/buildup/situationalcrosshair/crosshair/ClassicCrosshairResolver.class
+dev/buildup/situationalcrosshair/hud/CrosshairHudRenderer.class
+dev/buildup/situationalcrosshair/mixin/HudCrosshairMixin.class
+PASS: workspace root has no .git.

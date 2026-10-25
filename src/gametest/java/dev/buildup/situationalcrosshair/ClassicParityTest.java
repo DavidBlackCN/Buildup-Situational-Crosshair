@@ -22,11 +22,9 @@ import org.slf4j.LoggerFactory;
 public final class ClassicParityTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
-        context.runOnClient(c -> {
-            dev.buildup.situationalcrosshair.presentation.PresentationOptions.theme(
-                    dev.buildup.situationalcrosshair.presentation.CrosshairTheme.CLASSIC);
-            dev.buildup.situationalcrosshair.presentation.PresentationOptions.animation(
-                    dev.buildup.situationalcrosshair.presentation.TransitionMode.OFF);
+        context.runOnClient(client -> {
+            if (!CrosshairOptions.enabled()) throw new AssertionError("Default must be enabled");
+            if (ClassicCrosshairResolver.resolve(client) != null) throw new AssertionError("Title fallback");
         });
         try (var world = context.worldBuilder().create()) {
             world.getConnection().waitForChunksDownload();
@@ -50,18 +48,10 @@ public final class ClassicParityTest implements FabricClientGameTest {
                 expect(client, ClassicCrosshairType.BLOCK, "dirt empty hand");
                 client.level.setBlock(pos, Blocks.DIAMOND_ORE.defaultBlockState(), 3);
                 expect(client, ClassicCrosshairType.ERROR, "ore empty hand");
-                var oreSnapshot = dev.buildup.situationalcrosshair.crosshair.ContextCapture.capture(client);
-                if (oreSnapshot.breakability() != dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.Capability.YES
-                        || oreSnapshot.harvestability() != dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.Capability.NO) {
-                    throw new AssertionError("Breakability and harvestability must be independent");
-                }
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.WOODEN_PICKAXE));
                 expect(client, ClassicCrosshairType.ERROR, "insufficient tier");
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_PICKAXE));
                 expect(client, ClassicCrosshairType.BLOCK, "correct tier");
-                if (oreSnapshot.harvestability() != dev.buildup.situationalcrosshair.semantic.CrosshairContextSnapshot.Capability.NO) {
-                    throw new AssertionError("Captured facts changed with live inventory");
-                }
                 player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SHOVEL));
                 expect(client, ClassicCrosshairType.ERROR, "wrong tool");
                 client.level.setBlock(pos, Blocks.BEDROCK.defaultBlockState(), 3);
@@ -97,8 +87,29 @@ public final class ClassicParityTest implements FabricClientGameTest {
                 client.hitResult = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
                 expect(client, ClassicCrosshairType.BLOCK, "creative bedrock");
             });
+            world.getServer().runCommand("gamemode spectator @a");
+            context.waitFor(client -> client.player.isSpectator());
+            context.runOnClient(client -> {
+                var pos = client.player.blockPosition().offset(2, 0, 0);
+                client.level.setBlock(pos, Blocks.CHEST.defaultBlockState(), 3);
+                client.hitResult = new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false);
+                expect(client, null, "spectator container uses Vanilla");
+            });
+            world.getServer().runCommand("gamemode creative @a");
+            context.waitFor(client -> client.player.isCreative());
             context.takeScreenshot("classic-gameplay-smoke");
-            LoggerFactory.getLogger("classic-parity-test").info("PASS: 16 Classic resolver integration cases");
+            LoggerFactory.getLogger("classic-parity-test").info("PASS: Classic resolver integration cases including spectator container fallback");
+        }
+        context.runOnClient(client -> {
+            if (ClassicCrosshairResolver.resolve(client) != null) throw new AssertionError("Disconnect fallback");
+        });
+        try (var secondWorld = context.worldBuilder().create()) {
+            secondWorld.getConnection().waitForChunksDownload();
+            context.waitFor(client -> client.gui.screen() == null);
+            context.runOnClient(client -> {
+                client.hitResult = BlockHitResult.miss(Vec3.ZERO, Direction.UP, BlockPos.ZERO);
+                expect(client, ClassicCrosshairType.DOT, "world re-entry");
+            });
         }
     }
 

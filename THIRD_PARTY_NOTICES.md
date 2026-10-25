@@ -19,16 +19,9 @@ The original LICENSE is retained verbatim in `licenses/CC-BY-NC-SA-4.0.txt`.
 No additional rights are claimed and
 no publication or upload is performed by this local bootstrap. Resolve the
 conflicting distribution statements with the rights holder before publication.
-Stage 1 copies the four Classic crosshair PNGs byte-for-byte to the new namespace.
-Its resolver reimplements the local behavior using 26.3 APIs, and its renderer is
+The current mod retains the four Classic crosshair PNGs byte-for-byte under its own namespace.
+The resolver reimplements the local behavior using 26.3 APIs, and its renderer is
 new HUD API integration. No pixel, size or color changes were made to the PNGs.
 
 The Gradle wrapper is from FabricMC/fabric-example-mod's 26.3 branch;
 its Apache-2.0 notices are preserved in the wrapper scripts.
-
-Stage 5.3 sidecars are original Buildup artwork under MIT: the integer-grid SVG
-sources in `art/sidecar/`, their lossless PNG exports in `textures/gui/sidecar/`,
-and test-only A/B/C families and axe prototypes. They were authored for this
-project without importing inventory sprites, reference screenshot pixels or
-external mod artwork. This adds no rights to the four historical Classic PNGs;
-their attribution and original license above remain unchanged.
