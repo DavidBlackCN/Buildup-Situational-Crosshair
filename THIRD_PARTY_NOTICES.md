@@ -25,3 +25,11 @@ new HUD API integration. No pixel, size or color changes were made to the PNGs.
 
 The Gradle wrapper is from FabricMC/fabric-example-mod's 26.3 branch;
 its Apache-2.0 notices are preserved in the wrapper scripts.
+
+YACL (YetAnotherConfigLib), by isXander, is a required external configuration UI
+dependency: https://github.com/isXander/YetAnotherConfigLib
+License: LGPL-3.0-or-later, as declared in its published Fabric metadata.
+Mod Menu, by TerraformersMC and contributors, provides the optional settings
+entry point: https://github.com/TerraformersMC/ModMenu (MIT).
+These libraries are installed separately; their code and assets are not bundled
+inside the Buildup JAR. Their original notices remain in their own distributions.

@@ -26,7 +26,10 @@ public final class CrosshairHudRenderer {
     public static void register(Supplier<ClassicCrosshairType> crosshair) {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (level != client.level || client.player == null || !CrosshairOptions.enabled()
-                    || client.gui.hud.isHidden() || !client.options.getCameraType().isFirstPerson()) resetAnimation();
+                    || client.gui.hud.isHidden() || !client.options.getCameraType().isFirstPerson()) {
+                resetAnimation();
+                CrosshairBackground.reset();
+            }
             level = client.level;
         });
         HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, original -> (graphics, delta) -> {
@@ -39,6 +42,7 @@ public final class CrosshairHudRenderer {
                 if (vanillaRequestedCrosshair) {
                     int x = (graphics.guiWidth() - 15) / 2;
                     int y = (graphics.guiHeight() - 15) / 2;
+                    if (supportsContrast(pending)) CrosshairBackground.request();
                     draw(graphics, pending, x, y, System.nanoTime());
                 } else {
                     resetAnimation();
@@ -76,8 +80,12 @@ public final class CrosshairHudRenderer {
             return;
         }
         var frame = transition.update(type, CrosshairOptions.animation(), now);
+        int tone = supportsContrast(type) ? CrosshairBackground.color() : 0;
         if (!transition.active()) {
-            graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(type), x, y, 0, 0, 15, 15, 15, 15);
+            if (tone == 0)
+                graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(type), x, y, 0, 0, 15, 15, 15, 15);
+            else
+                graphics.blit(RenderPipelines.GUI_TEXTURED, CrosshairTextures.texture(type), x, y, 0, 0, 15, 15, 15, 15, tone);
             return;
         }
         // Merge coverage BEFORE drawing: one inverse blend per screen pixel.
@@ -85,9 +93,15 @@ public final class CrosshairHudRenderer {
         for (int i = 0; i < frame.length; i++) {
             int strength = Math.clamp(Math.round(frame[i] * 255), 0, 255);
             if (strength == 0) continue;
-            int color = 0xff000000 | strength << 16 | strength << 8 | strength;
-            graphics.blit(RenderPipelines.CROSSHAIR, CrosshairTextures.texture(ClassicCrosshairType.DOT),
+            int color = tone == 0 ? 0xff000000 | strength << 16 | strength << 8 | strength
+                    : strength << 24 | tone & 0xffffff;
+            graphics.blit(tone == 0 ? RenderPipelines.CROSSHAIR : RenderPipelines.GUI_TEXTURED,
+                    CrosshairTextures.texture(ClassicCrosshairType.DOT),
                     x + i % 15, y + i / 15, 7, 7, 1, 1, 15, 15, color);
         }
+    }
+
+    private static boolean supportsContrast(ClassicCrosshairType type) {
+        return type != null && CrosshairOptions.adaptiveContrast() && CrosshairTextures.masks() != null;
     }
 }

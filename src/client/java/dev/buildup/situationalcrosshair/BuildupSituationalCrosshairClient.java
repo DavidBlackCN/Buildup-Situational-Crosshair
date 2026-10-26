@@ -11,7 +11,7 @@ public final class BuildupSituationalCrosshairClient implements ClientModInitial
     @Override
     public void onInitializeClient() {
         dev.buildup.situationalcrosshair.hud.CrosshairTextures.register();
-        CrosshairOptions.registerCommands();
+        CrosshairOptions.load();
         CrosshairHudRenderer.register(() -> CrosshairOptions.enabled()
                 ? ClassicCrosshairResolver.resolve(Minecraft.getInstance()) : null);
         LoggerFactory.getLogger(MOD_ID).info("Buildup Situational Crosshair loaded (Classic core)");

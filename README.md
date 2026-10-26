@@ -1,8 +1,9 @@
 # Buildup Situational Crosshair
 
-Client-only Fabric mod for Minecraft **26.3**, version `0.1.0-core-animation.3+mc26.3`.
+Client-only Fabric mod for Minecraft **26.3**, version `0.1.0-adaptive-crosshair.1+mc26.3`.
 No server installation is required. Core Reset replaces the previous expansion
-roadmap. The central Classic crosshair uses original inverse rendering with shape transitions.
+roadmap. All four Classic states use borderless adaptive light/dark rendering by
+default, with vanilla inversion available as a saved setting.
 
 The mod retains the original 15x15 Classic DOT, BLOCK, ATTACK and ERROR textures.
 Air uses DOT; entity targets use ATTACK; mining checks native breakability and
@@ -16,17 +17,31 @@ The central crosshair now has a small time-based transition; there is no theme s
 
 ## Configuration
 
-- `/crosshair disable`: restore Vanilla's crosshair immediately.
-- `/crosshair enable`: restore the Classic dynamic crosshair (default).
-- `/crosshair animation expand`: gentle outward/inward transition (default).
-- `/crosshair animation fade`: change only pixel strength, without movement.
-- `/crosshair animation off`: immediate original texture switching.
+Install **YACL 3.9.7 for Minecraft 26.3 Fabric** (required), alongside Fabric API.
+Install **Mod Menu 21** to open the YACL configuration page:
+**Mods > Buildup Situational Crosshair > Configure**.
+There is no extra button in Minecraft's vanilla Options screen.
 
-The settings last for the current client session, including world changes.
-`CrosshairOptions.enabled()` / `setEnabled(boolean)` is the minimal client-thread
-interface for a future GUI. There is no settings screen, persistence or extra
-configuration library in this version. Animation options use the same
-client-thread `CrosshairOptions.animation()` / `setAnimation(Mode)` interface.
+- Color mode: **Adaptive contrast** (default) or **Vanilla inversion**.
+- Enable situational crosshair: on by default; off restores the vanilla crosshair.
+- Shape animation: gentle expansion (default), fade, or off.
+
+YACL provides Save, Cancel, Undo and Reset controls. Changes are applied when saved
+and persist in `config/buildup_situational_crosshair.json` across client restarts.
+All former `/crosshair` debug commands have been removed.
+Without Mod Menu, the same configuration can be edited while the game is closed:
+
+```json
+{
+  "enabled": true,
+  "animation": "expand",
+  "colorMode": "adaptive"
+}
+```
+
+Use `"vanilla_invert"` for original inversion. Animation values are `"expand"`,
+`"fade"` and `"off"`. Invalid configuration falls back to defaults without
+silently overwriting the existing file.
 
 The center remains steady. All shape transitions take **140ms**, including
 return to DOT and entry into ERROR; the cubic ease-out curve is unchanged. Shared BLOCK/ERROR outline pixels remain
@@ -37,8 +52,12 @@ Resource reload refreshes the masks. Packs with non-15x15, colored/translucent
 pixels, missing shared centers or a non-single-pixel DOT render immediately
 without animation, preserving their selected textures.
 
-The experimental dark contour was removed after user playtesting. Pure inverse
-rendering is restored; there is no outline option or alternative color mode.
+The rejected dark contour remains removed. Adaptive mode changes only the body
+color. It combines a larger background sample, temporal smoothing and stable tone
+selection on the same block face or entity to resist texture-driven flashes.
+Sustained extreme lighting changes can still change the tone. All four states and
+their transitions use the same color policy. Unsupported resources, unavailable
+or stale samples fall back to inversion. No outline, shadow or new artwork is added.
 
 ## Build and validation
 
@@ -57,8 +76,8 @@ assets do not ship in the mod JAR. It checks actual native mining/item behavior
 and transformed HUD submissions. Automated tests do not replace manual visual
 and modpack acceptance. `build` runs deterministic transition contracts via
 `animationTest`; client tests also capture six transition galleries.
-See [outline rollback](docs/OUTLINE_ROLLBACK.md), [animation report](docs/MAIN_CROSSHAIR_ANIMATION_REPORT.md) and the historical
-[Core Reset report](docs/CORE_RESET_REPORT.md).
+Development reports, validation screenshots and logs are kept in the workspace's
+`../docs/` directory, outside this Git repository. They are not shipped with the mod.
 
 ## Attribution
 

@@ -22,6 +22,7 @@ import java.util.Set;
 public final class AnimationClientTest implements FabricClientGameTest {
     @Override public void runTest(ClientGameTestContext context) {
         context.runOnClient(c -> {
+            CrosshairOptions.setAdaptiveContrast(false);
             if (CrosshairTextures.masks() == null) throw new AssertionError("Classic masks failed to load");
             for (Mode mode : new Mode[]{Mode.FADE, Mode.EXPAND}) for (var a : ClassicCrosshairType.values())
                 for (var b : ClassicCrosshairType.values()) for (long ms : new long[]{0, 20, 50, 100, 150}) {

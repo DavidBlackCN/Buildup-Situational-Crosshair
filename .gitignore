@@ -4,3 +4,6 @@ run/
 .idea/
 *.iml
 .local/
+# Local development records live in ../docs/, outside this repository.
+/docs/
+*.log

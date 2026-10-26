@@ -63,5 +63,6 @@ public final class CrosshairTextures extends SimplePreparableReloadListener<floa
     @Override protected void apply(float[][] prepared, ResourceManager resources, ProfilerFiller profiler) {
         masks = prepared;
         CrosshairHudRenderer.resetAnimation();
+        CrosshairBackground.reset();
     }
 }

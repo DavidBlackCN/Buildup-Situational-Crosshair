@@ -23,6 +23,7 @@ public final class ClassicParityTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
         context.runOnClient(client -> {
+            CrosshairOptions.setAdaptiveContrast(false);
             CrosshairOptions.setAnimation(dev.buildup.situationalcrosshair.crosshair.CrosshairTransition.Mode.OFF);
             if (!CrosshairOptions.enabled()) throw new AssertionError("Default must be enabled");
             if (ClassicCrosshairResolver.resolve(client) != null) throw new AssertionError("Title fallback");

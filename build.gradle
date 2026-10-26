@@ -12,10 +12,19 @@ loom {
     }
 }
 
+repositories {
+    maven { url = 'https://maven.isxander.dev/releases'; content { includeGroup 'dev.isxander' } }
+    maven { url = 'https://maven.terraformersmc.com/'; content { includeGroup 'com.terraformersmc' } }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    // Fabric loads YACL's bundled libraries; its Maven-only Kotlin tooling is unnecessary here.
+    implementation("dev.isxander:yet-another-config-lib:${project.yacl_version}") { transitive = false }
+    compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+    runtimeOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
 }
 
 processResources {
@@ -57,4 +66,10 @@ tasks.register('animationTest', JavaExec) {
     mainClass = 'dev.buildup.situationalcrosshair.crosshair.CrosshairTransitionTest'
 }
 check.dependsOn animationTest
-tasks.named('test') { exclude '**/CrosshairTransitionTest.class' }
+tasks.register('contrastTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.buildup.situationalcrosshair.crosshair.AdaptiveContrastTest'
+}
+check.dependsOn contrastTest
+tasks.named('test') { exclude '**/CrosshairTransitionTest.class', '**/AdaptiveContrastTest.class' }

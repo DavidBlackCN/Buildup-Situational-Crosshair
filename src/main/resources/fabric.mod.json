@@ -9,12 +9,15 @@
   "license": ["MIT", "CC-BY-NC-SA-4.0"],
   "mixins": ["buildup_situational_crosshair.mixins.json"],
   "entrypoints": {
-    "client": ["dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient"]
+    "client": ["dev.buildup.situationalcrosshair.BuildupSituationalCrosshairClient"],
+    "modmenu": ["dev.buildup.situationalcrosshair.config.CrosshairModMenu"]
   },
   "depends": {
     "fabricloader": ">=0.19.5",
     "minecraft": "26.3",
     "java": ">=25",
-    "fabric-api": "*"
-  }
+    "fabric-api": "*",
+    "yet_another_config_lib_v3": ">=3.9.7 <4"
+  },
+  "suggests": { "modmenu": ">=21.0.0" }
 }

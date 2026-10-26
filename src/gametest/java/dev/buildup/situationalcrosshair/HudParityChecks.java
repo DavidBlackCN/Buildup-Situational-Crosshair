@@ -38,16 +38,12 @@ final class HudParityChecks {
         check(client, 1, 0, "spyglass follows vanilla");
         client.player.stopUsingItem();
         client.player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-        for (var mode : dev.buildup.situationalcrosshair.crosshair.CrosshairTransition.Mode.values()) {
-            command(client, "crosshair animation " + mode.name().toLowerCase(java.util.Locale.ROOT));
-            if (CrosshairOptions.animation() != mode) throw new AssertionError("Animation command");
-        }
-        command(client, "crosshair animation off");
-        command(client, "crosshair disable");
-        if (CrosshairOptions.enabled()) throw new AssertionError("Disable command");
+        var dispatcher = net.fabricmc.fabric.api.client.command.v2.ClientCommands.getActiveDispatcher();
+        if (dispatcher != null && dispatcher.getRoot().getChild("crosshair") != null)
+            throw new AssertionError("Debug commands must be removed");
+        CrosshairOptions.setEnabled(false);
         check(client, 0, 1, "disabled restores Vanilla");
-        command(client, "crosshair enable");
-        if (!CrosshairOptions.enabled()) throw new AssertionError("Enable command");
+        CrosshairOptions.setEnabled(true);
         check(client, 1, 0, "re-enabled immediately");
         var indicator = client.options.attackIndicator().get();
         client.options.attackIndicator().set(net.minecraft.client.AttackIndicatorStatus.CROSSHAIR);
@@ -87,19 +83,6 @@ final class HudParityChecks {
         check(client, 0, 1, "null target vanilla fallback");
         client.hitResult = target;
         org.slf4j.LoggerFactory.getLogger("classic-parity-test").info("PASS: HUD visibility, enable switch, attack indicator and GUI scales 1/2/3");
-    }
-
-    private static void command(Minecraft client, String command) {
-        var dispatcher = net.fabricmc.fabric.api.client.command.v2.ClientCommands.getActiveDispatcher();
-        if (dispatcher.getRoot().getChild("crosshair").getChildren().size() != 3)
-            throw new AssertionError("Expected enable/disable/animation commands");
-        try {
-            if (dispatcher.execute(command, (net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource)
-                    client.getConnection().getSuggestionsProvider()) != 1)
-                throw new AssertionError("Command failed: " + command);
-        } catch (com.mojang.brigadier.exceptions.CommandSyntaxException ex) {
-            throw new AssertionError(command, ex);
-        }
     }
 
     static void check(Minecraft client, int custom, int vanilla, String label) {

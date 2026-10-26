@@ -1,7 +1,16 @@
 {
-  "buildup_situational_crosshair.enabled": "已启用自定义准星",
-  "buildup_situational_crosshair.disabled": "已恢复原版准星",
-  "buildup_situational_crosshair.animation.off": "已关闭准星动画",
-  "buildup_situational_crosshair.animation.fade": "准星动画：原位渐变",
-  "buildup_situational_crosshair.animation.expand": "准星动画：轻微展开"
+  "buildup_situational_crosshair.settings.title": "准星设置",
+  "buildup_situational_crosshair.settings.color": "颜色模式",
+  "buildup_situational_crosshair.settings.color.adaptive": "自适应对比度",
+  "buildup_situational_crosshair.settings.color.vanilla_invert": "原版反色",
+  "buildup_situational_crosshair.settings.color.description": "选择根据背景调整的明暗主体，或原版背景反色。对所有 Classic 准星生效。",
+  "buildup_situational_crosshair.settings.enabled": "启用情境准星",
+  "buildup_situational_crosshair.settings.enabled.description": "关闭后恢复原版准星。",
+  "buildup_situational_crosshair.settings.animation": "形状动画",
+  "buildup_situational_crosshair.settings.animation.description": "以 140 毫秒的渐变或轻微展开过渡到新的准星形状。",
+  "buildup_situational_crosshair.settings.animation.off": "关闭",
+  "buildup_situational_crosshair.settings.animation.fade": "原位渐变",
+  "buildup_situational_crosshair.settings.animation.expand": "轻微展开",
+  "buildup_situational_crosshair.settings.save_failed": "保存失败",
+  "buildup_situational_crosshair.settings.save_failed.description": "无法保存配置，请检查文件权限后重试。"
 }

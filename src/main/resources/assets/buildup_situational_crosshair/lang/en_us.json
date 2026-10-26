@@ -1,7 +1,16 @@
 {
-  "buildup_situational_crosshair.enabled": "Custom crosshair enabled",
-  "buildup_situational_crosshair.disabled": "Vanilla crosshair restored",
-  "buildup_situational_crosshair.animation.off": "Crosshair animation disabled",
-  "buildup_situational_crosshair.animation.fade": "Crosshair animation: fade",
-  "buildup_situational_crosshair.animation.expand": "Crosshair animation: gentle expansion"
+  "buildup_situational_crosshair.settings.title": "Crosshair",
+  "buildup_situational_crosshair.settings.color": "Color mode",
+  "buildup_situational_crosshair.settings.color.adaptive": "Adaptive contrast",
+  "buildup_situational_crosshair.settings.color.vanilla_invert": "Vanilla inversion",
+  "buildup_situational_crosshair.settings.color.description": "Choose adaptive light/dark colors or vanilla background inversion. Applies to every Classic crosshair.",
+  "buildup_situational_crosshair.settings.enabled": "Enable situational crosshair",
+  "buildup_situational_crosshair.settings.enabled.description": "Turn off to restore the vanilla crosshair.",
+  "buildup_situational_crosshair.settings.animation": "Shape animation",
+  "buildup_situational_crosshair.settings.animation.description": "Fade or gently expand between shapes over 140 ms.",
+  "buildup_situational_crosshair.settings.animation.off": "Off",
+  "buildup_situational_crosshair.settings.animation.fade": "Fade",
+  "buildup_situational_crosshair.settings.animation.expand": "Gentle expansion",
+  "buildup_situational_crosshair.settings.save_failed": "Save failed",
+  "buildup_situational_crosshair.settings.save_failed.description": "The configuration could not be saved. Check file permissions and try again."
 }
